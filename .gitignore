@@ -1,0 +1,31 @@
+# --- GNS3 runtime data (disks, container volumes, captures): ~30 GB, rebuilt on each machine
+project-files/
+*.qcow2
+*.img
+*.vmdk
+*.pcap
+*.pcapng
+*.log
+*.pid
+*.tmp
+*.swp
+*.lock
+
+# --- PDFs (docs/informe.pdf stays local)
+*.pdf
+
+# --- Private keys and secrets: never publish (regenerate them locally)
+*.key
+*-key.pem
+*.p12
+*.pfx
+docker/wazuh-gns3/certs/
+# OPNsense config.xml embeds the web GUI private key (<prv>) and API keys
+*config.xml
+
+# --- Local agent / editor settings
+.claude/settings.local.json
+.codegraph/
+.vscode/
+.idea/
+.DS_Store

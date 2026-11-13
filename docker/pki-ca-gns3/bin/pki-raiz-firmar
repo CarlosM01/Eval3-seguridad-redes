@@ -1,0 +1,14 @@
+#!/bin/bash
+# CA-RAIZ only: sign the issuing CA CSR (5 years, pathlen 0).
+# Usage: pki-raiz-firmar <emisora.csr>   -> /srv/ca/raiz/salida/emisora.pem
+. /usr/local/sbin/pki-comun.sh
+[ $# -eq 1 ] && [ -f "$1" ] || die "usage: pki-raiz-firmar <emisora.csr>"
+d=$(ca_dir raiz)
+openssl req -in "$1" -noout -verify >/dev/null 2>&1 || die "CSR signature invalid"
+mkdir -p "$d/salida"
+openssl ca "${PROV[@]}" -config "$CNF" -name ca_raiz -extensions v3_emisora \
+  -keyfile "$(key_uri raiz)" -days 1825 -notext -batch \
+  -in "$1" -out "$d/salida/emisora.pem"
+cp "$d/raiz.pem" "$d/crl/raiz.crl" "$d/salida/"
+chmod 0644 "$d"/salida/*
+echo "copy $d/salida/{emisora.pem,raiz.pem,raiz.crl} to PKI-CA and run pki-emisora-instalar"

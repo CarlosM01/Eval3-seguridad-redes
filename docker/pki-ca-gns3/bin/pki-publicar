@@ -1,0 +1,25 @@
+#!/bin/bash
+# PKI-CA only: copy the public PKI files to the lighttpd web root.
+#   /ca/raiz.pem /ca/emisora.pem /ca/cadena.pem   CA certificates
+#   /crl/raiz.crl /crl/emisora.crl                CRLs (DER)
+#   /certs/<nombre>.pem                           issued certificates
+. /usr/local/sbin/pki-comun.sh
+d=$(ca_dir emisora)
+umask 022
+rm -rf "$WEB.new"
+mkdir -p "$WEB.new/ca" "$WEB.new/crl" "$WEB.new/certs"
+cp "$d/raiz.pem" "$d/emisora.pem" "$d/cadena.pem" "$WEB.new/ca/"
+for f in raiz.crl emisora.crl; do [ -f "$d/crl/$f" ] && cp "$d/crl/$f" "$WEB.new/crl/"; done
+cp "$d"/certs/*.pem "$WEB.new/certs/" 2>/dev/null || true
+chmod -R a+rX "$WEB.new"
+rm -rf "$WEB.old"
+[ -d "$WEB" ] && mv "$WEB" "$WEB.old"
+mv "$WEB.new" "$WEB"
+rm -rf "$WEB.old"
+
+# openssl ocsp re-reads index.txt only after it serves the next request, so
+# one local query makes the following real query see the change.
+if [ -f "$d/ocsp.pem" ] && netstat -ltn 2>/dev/null | grep -q ':2561 '; then
+  openssl ocsp -issuer "$d/emisora.pem" -cert "$d/ocsp.pem" -url http://127.0.0.1:2561 \
+    -noverify -timeout 5 >/dev/null 2>&1 || true
+fi

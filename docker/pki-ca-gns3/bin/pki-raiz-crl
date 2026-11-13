@@ -1,0 +1,10 @@
+#!/bin/bash
+# CA-RAIZ only: (re)generate the root CRL (valid 365 days). Copy it to PKI-CA,
+# which serves it at http://10.99.0.10/crl/raiz.crl.
+. /usr/local/sbin/pki-comun.sh
+d=$(ca_dir raiz)
+openssl ca "${PROV[@]}" -config "$CNF" -name ca_raiz -gencrl -crlexts crl_ext \
+  -keyfile "$(key_uri raiz)" -out "$d/crl/raiz.crl.pem" 2>/dev/null
+openssl crl -in "$d/crl/raiz.crl.pem" -outform DER -out "$d/crl/raiz.crl"
+chmod 0644 "$d/crl/raiz.crl" "$d/crl/raiz.crl.pem"
+openssl crl -in "$d/crl/raiz.crl.pem" -noout -lastupdate -nextupdate

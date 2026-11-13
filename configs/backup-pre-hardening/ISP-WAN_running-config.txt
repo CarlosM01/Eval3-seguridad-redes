@@ -1,0 +1,171 @@
+Building configuration...
+
+Current configuration : 4236 bytes
+!
+version 15.9
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname ISP-WAN
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+no ip icmp rate-limit unreachable
+!
+!
+!
+ip dhcp excluded-address 100.64.20.1 100.64.20.9
+!
+ip dhcp pool RED_MOVIL
+ network 100.64.20.0 255.255.255.0
+ default-router 100.64.20.1 
+ dns-server 1.1.1.1 8.8.8.8 
+!
+!
+!
+no ip domain lookup
+ip domain name isp.lab
+ip cef
+no ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+redundancy
+!
+no cdp log mismatch duplex
+!
+ip tcp synwait-time 5
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ description UPLINK INTERNET (NAT1)
+ ip address dhcp
+ ip nat enable
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/1
+ description CLIENTE EMPRESA - FW-ZONA-CENTRO (IP publica fija)
+ ip address 203.0.113.1 255.255.255.252
+ ip nat enable
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/2
+ description RED MOVIL CGNAT - FW-VEHICULO-01
+ ip address 100.64.20.1 255.255.255.0
+ ip nat enable
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/3
+ no ip address
+ shutdown
+ duplex auto
+ speed auto
+ media-type rj45
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip nat pool CGNAT_PUBLICA 198.51.100.10 198.51.100.10 prefix-length 24
+ip nat source list NAT_CGNAT pool CGNAT_PUBLICA overload
+ip nat source list NAT_INTERNET interface GigabitEthernet0/0 overload
+!
+ip access-list extended NAT_CGNAT
+ remark Clientes moviles hacia la IP publica de la empresa salen por la IP publica compartida del operador
+ permit ip 100.64.20.0 0.0.0.255 203.0.113.0 0.0.0.3
+ip access-list extended NAT_INTERNET
+ remark Salida a Internet real por NAT1, excepto el trafico entre clientes del ISP
+ deny   ip 100.64.20.0 0.0.0.255 203.0.113.0 0.0.0.3
+ deny   ip 203.0.113.0 0.0.0.3 198.51.100.0 0.0.0.255
+ deny   ip 203.0.113.0 0.0.0.3 100.64.20.0 0.0.0.255
+ permit ip 100.64.20.0 0.0.0.255 any
+ permit ip 203.0.113.0 0.0.0.3 any
+!
+ipv6 ioam timestamp
+!
+!
+!
+control-plane
+!
+banner exec ^C
+**************************************************************************
+* IOSv is strictly limited to use for evaluation, demonstration and IOS  *
+* education. IOSv is provided as-is and is not supported by Cisco's      *
+* Technical Advisory Center. Any use or disclosure, in whole or in part, *
+* of the IOSv Software or Documentation to any third party for any       *
+* purposes is expressly prohibited except as otherwise authorized by     *
+* Cisco in writing.                                                      *
+**************************************************************************^C
+banner incoming ^C
+**************************************************************************
+* IOSv is strictly limited to use for evaluation, demonstration and IOS  *
+* education. IOSv is provided as-is and is not supported by Cisco's      *
+* Technical Advisory Center. Any use or disclosure, in whole or in part, *
+* of the IOSv Software or Documentation to any third party for any       *
+* purposes is expressly prohibited except as otherwise authorized by     *
+* Cisco in writing.                                                      *
+**************************************************************************^C
+banner login ^C
+**************************************************************************
+* IOSv is strictly limited to use for evaluation, demonstration and IOS  *
+* education. IOSv is provided as-is and is not supported by Cisco's      *
+* Technical Advisory Center. Any use or disclosure, in whole or in part, *
+* of the IOSv Software or Documentation to any third party for any       *
+* purposes is expressly prohibited except as otherwise authorized by     *
+* Cisco in writing.                                                      *
+**************************************************************************^C
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line vty 0 4
+ login
+ transport input none
+!
+no scheduler allocate
+!
+end

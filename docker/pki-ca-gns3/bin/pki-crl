@@ -1,0 +1,13 @@
+#!/bin/bash
+# PKI-CA only: regenerate the issuing CA CRL (valid 7 days) and publish it.
+# Runs at container start, daily from cron and after each revocation, so a
+# valid CRL is always published before the previous one expires.
+. /usr/local/sbin/pki-comun.sh
+d=$(ca_dir emisora)
+openssl ca "${PROV[@]}" -config "$CNF" -name ca_emisora -gencrl -crlexts crl_ext \
+  -keyfile "$(key_uri emisora)" -out "$d/crl/emisora.crl.pem" >/dev/null 2>&1 \
+  || die "CRL generation failed"
+openssl crl -in "$d/crl/emisora.crl.pem" -outform DER -out "$d/crl/emisora.crl"
+chmod 0644 "$d/crl/emisora.crl" "$d/crl/emisora.crl.pem"
+/usr/local/sbin/pki-publicar
+echo "$(date -u '+%F %T') CRL $(openssl crl -in "$d/crl/emisora.crl.pem" -noout -crlnumber -nextupdate | tr '\n' ' ')"

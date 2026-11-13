@@ -1,0 +1,14 @@
+#!/bin/bash
+# CA-RAIZ only: create the root token, key, self-signed certificate (10 years)
+# and the first root CRL.
+. /usr/local/sbin/pki-comun.sh
+d=$(ca_dir raiz)
+[ -f "$d/raiz.pem" ] && die "root CA already exists at $d/raiz.pem"
+init_ca_dir raiz
+init_token raiz
+openssl req -new -x509 "${PROV[@]}" -config "$CNF" -extensions v3_raiz \
+  -key "$(key_uri raiz)" -sha256 -days 3650 \
+  -subj "/O=$ORG/CN=Empresa CA Raiz" -out "$d/raiz.pem"
+chmod 0644 "$d/raiz.pem"
+/usr/local/sbin/pki-raiz-crl
+openssl x509 -in "$d/raiz.pem" -noout -subject -enddate -fingerprint -sha256

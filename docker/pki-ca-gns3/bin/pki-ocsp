@@ -1,0 +1,14 @@
+#!/bin/bash
+# PKI-CA only: OCSP responder on TCP 2561, behind the lighttpd proxy on 2560
+# (see /etc/lighttpd/pki.conf); restarted if it stops.
+# Answers are signed by the "ocsp" key in the issuing token.
+. /usr/local/sbin/pki-comun.sh
+d=$(ca_dir emisora)
+[ -f "$d/ocsp.pem" ] || die "run pki-ocsp-init first"
+while true; do
+  openssl ocsp "${PROV[@]}" -port 2561 -index "$d/index.txt" -CA "$d/emisora.pem" \
+    -rsigner "$d/ocsp.pem" -rkey "$(key_uri emisora ocsp)" -rmd sha256 \
+    -nmin 60 -ignore_err -timeout 10
+  echo "$(date -u '+%F %T') ocsp responder stopped, restarting" >&2
+  sleep 5
+done

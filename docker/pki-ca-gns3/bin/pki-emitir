@@ -1,0 +1,83 @@
+#!/bin/bash
+# PKI-CA only: issue an end-entity certificate from the issuing CA.
+#
+# Usage: pki-emitir <perfil> <nombre> [--csr <archivo.csr>] [--san <lista>]
+#   perfil  servidor | equipo | usuario | socio
+#   nombre  certificate CN; also the first SAN (DNS name, or e-mail for usuario)
+#   --csr   CSR made on the device that will use the key (preferred). Without
+#           it the key is generated here and handed out as PKCS#12 (fallback).
+#   --san   extra SAN entries, e.g. "IP:192.168.20.5,DNS:wms"
+#
+# Key and lifetime per profile (informe.pdf, POL-04):
+#   servidor, equipo, usuario  ECDSA P-256, 1 year
+#   socio                      RSA-3072,    2 years (AS2 signing and partners)
+. /usr/local/sbin/pki-comun.sh
+usage() { die "usage: pki-emitir <servidor|equipo|usuario|socio> <nombre> [--csr F] [--san LIST]"; }
+[ $# -ge 2 ] || usage
+perfil=$1 nombre=$2; shift 2
+csr="" extra=""
+while [ $# -gt 0 ]; do
+  case $1 in
+    --csr) csr=${2:-}; shift 2 ;;
+    --san) extra=${2:-}; shift 2 ;;
+    *) usage ;;
+  esac
+done
+case $perfil in
+  servidor|equipo|usuario) alg=ec;  dias=365 ;;
+  socio)                   alg=rsa; dias=730 ;;
+  *) usage ;;
+esac
+[[ $nombre =~ ^[A-Za-z0-9@._-]+$ ]] || die "invalid name '$nombre'"
+d=$(ca_dir emisora)
+[ -f "$d/emisora.pem" ] || die "issuing CA not installed"
+mkdir -p "$d/certs" "$d/revocados" "$d/salida"
+[ -f "$d/certs/$nombre.pem" ] && die "'$nombre' already has a valid certificate; revoke it first (pki-revocar $nombre superseded)"
+
+if [ "$perfil" = usuario ]; then san="email:$nombre"; else san="DNS:$nombre"; fi
+[ -n "$extra" ] && san="$san,$extra"
+export PKI_SAN=$san
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+if [ -z "$csr" ]; then
+  # Fallback: the device cannot make its own CSR. Key lives only in $tmp.
+  if [ $alg = ec ]; then
+    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out "$tmp/key.pem"
+  else
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out "$tmp/key.pem"
+  fi
+  openssl req -new -key "$tmp/key.pem" -subj "/CN=$nombre" -out "$tmp/req.csr"
+  csr=$tmp/req.csr
+fi
+[ -f "$csr" ] || die "CSR '$csr' not found"
+openssl req -in "$csr" -noout -verify >/dev/null 2>&1 || die "CSR signature invalid"
+
+# The key type and size must match the profile.
+openssl req -in "$csr" -noout -pubkey | openssl pkey -pubin -noout -text_pub > "$tmp/pub.txt"
+if [ $alg = ec ]; then
+  grep -q "prime256v1" "$tmp/pub.txt" || die "profile $perfil needs an ECDSA P-256 key"
+else
+  grep -q "Public-Key: (3072 bit)" "$tmp/pub.txt" && grep -q "Modulus" "$tmp/pub.txt" \
+    || die "profile $perfil needs an RSA-3072 key"
+fi
+
+openssl ca "${PROV[@]}" -config "$CNF" -name ca_emisora -extensions "v3_$perfil" \
+  -keyfile "$(key_uri emisora)" -days "$dias" -notext -batch \
+  -subj "/O=$ORG/CN=$nombre" -in "$csr" -out "$d/certs/$nombre.pem" >/dev/null 2>"$tmp/ca.err" \
+  || { cat "$tmp/ca.err" >&2; die "signing failed"; }
+chmod 0644 "$d/certs/$nombre.pem"
+
+if [ -f "$tmp/key.pem" ]; then
+  openssl rand -base64 18 > "$d/salida/$nombre.p12.pass"
+  openssl pkcs12 -export -inkey "$tmp/key.pem" -in "$d/certs/$nombre.pem" \
+    -certfile "$d/cadena.pem" -name "$nombre" \
+    -passout "file:$d/salida/$nombre.p12.pass" -out "$d/salida/$nombre.p12"
+  chmod 0600 "$d/salida/$nombre.p12" "$d/salida/$nombre.p12.pass"
+  echo "PKCS#12: $d/salida/$nombre.p12 (password in $nombre.p12.pass)."
+  echo "Copy both to the device, then delete them here: rm $d/salida/$nombre.p12*"
+fi
+
+/usr/local/sbin/pki-publicar
+openssl x509 -in "$d/certs/$nombre.pem" -noout -subject -serial -enddate -ext subjectAltName
+echo "certificate: $d/certs/$nombre.pem  (http://10.99.0.10/certs/$nombre.pem)"

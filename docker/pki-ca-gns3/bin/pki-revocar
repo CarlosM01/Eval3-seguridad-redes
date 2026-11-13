@@ -1,0 +1,22 @@
+#!/bin/bash
+# PKI-CA only: revoke an end-entity certificate and publish a new CRL.
+# Usage: pki-revocar <nombre> [motivo]
+#   motivo: unspecified (default) | keyCompromise | affiliationChanged |
+#           superseded | cessationOfOperation
+# OCSP answers "revoked" at once (it reads the same index.txt).
+. /usr/local/sbin/pki-comun.sh
+[ $# -ge 1 ] || die "usage: pki-revocar <nombre> [motivo]"
+nombre=$1 motivo=${2:-unspecified}
+case $motivo in
+  unspecified|keyCompromise|affiliationChanged|superseded|cessationOfOperation) ;;
+  *) die "invalid reason '$motivo'" ;;
+esac
+d=$(ca_dir emisora)
+cert=$d/certs/$nombre.pem
+[ -f "$cert" ] || die "no valid certificate named '$nombre'"
+serial=$(openssl x509 -in "$cert" -noout -serial | cut -d= -f2)
+openssl ca "${PROV[@]}" -config "$CNF" -name ca_emisora -keyfile "$(key_uri emisora)" \
+  -revoke "$cert" -crl_reason "$motivo" >/dev/null 2>&1 || die "revocation failed"
+mv "$cert" "$d/revocados/$nombre-$serial.pem"
+echo "revoked $nombre (serial $serial, reason $motivo)"
+/usr/local/sbin/pki-crl

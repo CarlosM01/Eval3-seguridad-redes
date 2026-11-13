@@ -1,0 +1,12 @@
+#!/bin/bash
+# PKI-CA only: create the issuing CA token, key and CSR.
+# Output: /srv/ca/emisora/emisora.csr (copy it to CA-RAIZ).
+. /usr/local/sbin/pki-comun.sh
+d=$(ca_dir emisora)
+[ -f "$d/emisora.pem" ] && die "issuing CA already installed at $d/emisora.pem"
+init_ca_dir emisora
+init_token emisora
+openssl req -new "${PROV[@]}" -config "$CNF" -key "$(key_uri emisora)" -sha256 \
+  -subj "/O=$ORG/CN=Empresa CA Emisora" -out "$d/emisora.csr"
+chmod 0644 "$d/emisora.csr"
+echo "CSR: $d/emisora.csr"

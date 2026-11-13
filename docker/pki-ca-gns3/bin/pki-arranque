@@ -1,0 +1,16 @@
+#!/bin/bash
+# Container entry point. On PKI-CA (issuing CA installed) it refreshes the CRL
+# and starts lighttpd (CRL and CA certs on TCP 80, OCSP proxy on TCP 2560),
+# crond (daily CRL) and the OCSP responder (127.0.0.1:2561 behind the proxy). On CA-RAIZ it starts nothing. Then a shell for
+# the GNS3 console.
+if [ -f /srv/ca/emisora/emisora.pem ]; then
+  mkdir -p /var/log/pki
+  /usr/local/sbin/pki-crl >> /var/log/pki/crl.log 2>&1
+  lighttpd -f /etc/lighttpd/pki.conf
+  crond -b -l 8 -L /var/log/pki/cron.log
+  if [ -f /srv/ca/emisora/ocsp.pem ]; then
+    nohup /usr/local/sbin/pki-ocsp >> /var/log/pki/ocsp.log 2>&1 &
+  fi
+  echo "PKI-CA: CRL, lighttpd :80 and OCSP :2560 started (logs in /var/log/pki)"
+fi
+exec /bin/sh

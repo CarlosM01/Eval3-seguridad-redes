@@ -1,0 +1,22 @@
+#!/bin/bash
+# PKI-CA only: create the OCSP responder certificate. Its ECDSA P-256 key is
+# generated non-extractable in the issuing token (object "ocsp"). 1 year.
+# Renew: delete ocsp.pem, remove the object (pkcs11-tool --delete-object
+# --type privkey --label ocsp, same for pubkey) and run again.
+. /usr/local/sbin/pki-comun.sh
+d=$(ca_dir emisora)
+[ -f "$d/ocsp.pem" ] && die "OCSP certificate already exists at $d/ocsp.pem"
+pin=$(cat "$d/private/pin")
+pkcs11-tool --module "$MODULE" --token-label emisora --login --pin "$pin" \
+  --keypairgen --key-type EC:prime256v1 --label ocsp --id 02 --sensitive >/dev/null
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+openssl req -new "${PROV[@]}" -config "$CNF" -key "$(key_uri emisora ocsp)" -sha256 \
+  -subj "/O=$ORG/CN=Empresa OCSP Emisora" -out "$tmp/ocsp.csr" >/dev/null 2>&1 \
+  || die "OCSP CSR failed"
+openssl ca "${PROV[@]}" -config "$CNF" -name ca_emisora -extensions v3_ocsp \
+  -keyfile "$(key_uri emisora)" -days 365 -notext -batch \
+  -subj "/O=$ORG/CN=Empresa OCSP Emisora" -in "$tmp/ocsp.csr" -out "$d/ocsp.pem" >/dev/null 2>&1 \
+  || die "OCSP certificate signing failed"
+chmod 0644 "$d/ocsp.pem"
+openssl x509 -in "$d/ocsp.pem" -noout -subject -enddate -ext extendedKeyUsage

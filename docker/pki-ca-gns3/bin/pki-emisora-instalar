@@ -1,0 +1,23 @@
+#!/bin/bash
+# PKI-CA only: install the issuing certificate signed by CA-RAIZ.
+# Usage: pki-emisora-instalar <emisora.pem> <raiz.pem> <raiz.crl>
+. /usr/local/sbin/pki-comun.sh
+[ $# -eq 3 ] || die "usage: pki-emisora-instalar <emisora.pem> <raiz.pem> <raiz.crl>"
+d=$(ca_dir emisora)
+cert=$1 raiz=$2 crl=$3
+openssl verify -CAfile "$raiz" "$cert" >/dev/null || die "issuing cert does not chain to root"
+# The certificate must hold the public key of the key inside the token.
+# libp11 prints diagnostics on stdout, so write the key to a file.
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+openssl pkey "${PROV[@]}" -pubin -in "pkcs11:token=emisora;object=emisora;type=public" \
+  -pubout -out "$tmp" >/dev/null 2>&1
+want=$(sha256sum < "$tmp")
+got=$(openssl x509 -in "$cert" -noout -pubkey | sha256sum)
+[ "$want" = "$got" ] || die "certificate does not match the token key"
+install -m 0644 "$cert" "$d/emisora.pem"
+install -m 0644 "$raiz" "$d/raiz.pem"
+install -m 0644 "$crl" "$d/crl/raiz.crl"
+cat "$d/emisora.pem" "$d/raiz.pem" > "$d/cadena.pem"
+chmod 0644 "$d/cadena.pem"
+openssl verify -CAfile "$d/raiz.pem" "$d/emisora.pem"

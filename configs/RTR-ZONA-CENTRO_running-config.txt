@@ -1,0 +1,376 @@
+Building configuration...
+
+  
+Current configuration : 14471 bytes
+!
+version 15.9
+service timestamps debug datetime msec localtime show-timezone
+service timestamps log datetime msec localtime show-timezone
+no service password-encryption
+!
+hostname RTR-ZONA-CENTRO
+!
+boot-start-marker
+boot-end-marker
+!
+!
+logging rate-limit console 10
+enable secret 9 $9$V.G1gczUURV2Af$il5jUHW8KWnPEdJ/DV6QDWUvc6ZdbzkhV6SNUgs3gig
+!
+no aaa new-model
+!
+!
+!
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+no ip icmp rate-limit unreachable
+!
+!
+!
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.10
+!
+ip dhcp pool POOL_VLAN10_USUARIOS
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1 
+ dns-server 1.1.1.1 8.8.8.8 
+!
+ip dhcp pool POOL_VLAN20_INVENTARIO
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1 
+ dns-server 1.1.1.1 8.8.8.8 
+!
+!
+!
+no ip domain lookup
+ip domain name empresa.local
+ip cef
+no ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+username adminTI privilege 15 secret 9 $9$lFYtOCc/XfoSrv$iVr96VUhCasyFix.IQ5ZBBoawSBSOHjeS7n5hYqtwEU
+!
+redundancy
+!
+no cdp log mismatch duplex
+!
+ip tcp synwait-time 5
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ description WAN - Conectado a nodo NAT GNS3 (ISP)
+ ip address dhcp
+ ip access-group EACL_WAN_IN in
+ ip nat outside
+ ip virtual-reassembly in
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/1
+ description TRUNK Hacia Switch LAN
+ no ip address
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/1.10
+ description VLAN 10 - Administrativos y Logistica
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+ ip access-group EACL_VLAN10_IN in
+ ip nat inside
+ ip virtual-reassembly in
+!
+interface GigabitEthernet0/1.20
+ description VLAN 20 - Inventario y Gestion Bodegas
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+ ip access-group EACL_VLAN20_IN in
+!
+interface GigabitEthernet0/1.30
+ description VLAN 30 - Servidor SIEM y Monitoreo
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+ ip access-group EACL_VLAN30_IN in
+!
+interface GigabitEthernet0/1.99
+ description VLAN 99 - Administracion TI
+ encapsulation dot1Q 99
+ ip address 10.99.0.1 255.255.255.128
+ ip access-group EACL_VLAN99_IN in
+!
+interface GigabitEthernet0/2
+ no ip address
+ shutdown
+ duplex auto
+ speed auto
+ media-type rj45
+!
+interface GigabitEthernet0/3
+ no ip address
+ shutdown
+ duplex auto
+ speed auto
+ media-type rj45
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip nat inside source list EACL_NAT_INTERNET interface GigabitEthernet0/0 overload
+ip ssh version 2
+!
+ip access-list extended EACL_NAT_INTERNET
+ remark >>> CRITERIO 4: Solo VLAN 10 puede usar NAT para salir a Internet
+ permit tcp 192.168.10.0 0.0.0.255 any eq www
+ permit tcp 192.168.10.0 0.0.0.255 any eq 443
+ permit udp 192.168.10.0 0.0.0.255 any eq domain
+ permit tcp 192.168.10.0 0.0.0.255 any eq domain
+ permit udp 192.168.10.0 0.0.0.255 any eq ntp
+ permit icmp 192.168.10.0 0.0.0.255 any echo
+ deny   ip any any log
+ip access-list extended EACL_VLAN10_IN
+ remark >>> DHCP: Permitir descubrimiento y solicitud de IP (ANTES de anti-spoofing)
+ permit udp any eq bootpc any eq bootps
+ remark >>> ANTI-SPOOFING: Denegar paquetes con origen falsificado
+ deny   ip 192.168.20.0 0.0.0.255 any log
+ deny   ip 192.168.30.0 0.0.0.255 any log
+ deny   ip 10.99.0.0 0.0.0.127 any log
+ deny   ip 127.0.0.0 0.255.255.255 any log
+ deny   ip 0.0.0.0 0.255.255.255 any log
+ remark >>> CRITERIO 2: Permitir Syslog (UDP 514) y Agente Wazuh (1514, 1515) hacia SIEM en VLAN 30
+ permit udp 192.168.10.0 0.0.0.255 host 192.168.30.5 eq syslog
+ permit tcp 192.168.10.0 0.0.0.255 host 192.168.30.5 eq 1514
+ permit udp 192.168.10.0 0.0.0.255 host 192.168.30.5 eq 1514
+ permit tcp 192.168.10.0 0.0.0.255 host 192.168.30.5 eq 1515
+ remark >>> CRITERIO 1: Aislamiento total entre VLANs
+ deny   ip 192.168.10.0 0.0.0.255 192.168.20.0 0.0.0.255 log
+ deny   ip 192.168.10.0 0.0.0.255 192.168.30.0 0.0.0.255 log
+ deny   ip 192.168.10.0 0.0.0.255 10.99.0.0 0.0.0.127 log
+ remark >>> CRITERIO 4: Servicios de Internet permitidos para VLAN 10
+ permit udp 192.168.10.0 0.0.0.255 any eq domain
+ permit tcp 192.168.10.0 0.0.0.255 any eq domain
+ permit tcp 192.168.10.0 0.0.0.255 any eq www
+ permit tcp 192.168.10.0 0.0.0.255 any eq 443
+ permit udp 192.168.10.0 0.0.0.255 any eq ntp
+ permit icmp 192.168.10.0 0.0.0.255 any echo
+ permit tcp 192.168.10.0 0.0.0.255 any established
+ remark >>> DENY ALL: Captura y registra todo trC!fico no autorizado
+ deny   ip any any log
+ip access-list extended EACL_VLAN20_IN
+ remark >>> DHCP: Permitir descubrimiento y solicitud de IP (ANTES de anti-spoofing)
+ permit udp any eq bootpc any eq bootps
+ remark >>> ANTI-SPOOFING: Denegar paquetes con origen falsificado
+ deny   ip 192.168.10.0 0.0.0.255 any log
+ deny   ip 192.168.30.0 0.0.0.255 any log
+ deny   ip 10.99.0.0 0.0.0.127 any log
+ deny   ip 127.0.0.0 0.255.255.255 any log
+ deny   ip 0.0.0.0 0.255.255.255 any log
+ remark >>> CRITERIO 2: Permitir Syslog (UDP 514) y Agente Wazuh (1514, 1515) hacia SIEM en VLAN 30
+ permit udp 192.168.20.0 0.0.0.255 host 192.168.30.5 eq syslog
+ permit tcp 192.168.20.0 0.0.0.255 host 192.168.30.5 eq 1514
+ permit udp 192.168.20.0 0.0.0.255 host 192.168.30.5 eq 1514
+ permit tcp 192.168.20.0 0.0.0.255 host 192.168.30.5 eq 1515
+ remark >>> CRITERIO 1: Aislamiento - VLAN 20 sin acceso a otras VLANs ni Internet
+ deny   ip 192.168.20.0 0.0.0.255 192.168.10.0 0.0.0.255 log
+ deny   ip 192.168.20.0 0.0.0.255 192.168.30.0 0.0.0.255 log
+ deny   ip 192.168.20.0 0.0.0.255 10.99.0.0 0.0.0.127 log
+ remark >>> SIN INTERNET: VLAN 20 no tiene salida a Internet (CRITERIO 4)
+ deny   ip 192.168.20.0 0.0.0.255 any log
+ remark >>> DENY ALL: Captura cualquier paquete restante
+ deny   ip any any log
+ip access-list extended EACL_VLAN30_IN
+ remark >>> ANTI-SPOOFING: Denegar paquetes con origen falsificado
+ deny   ip 192.168.10.0 0.0.0.255 any log
+ deny   ip 192.168.20.0 0.0.0.255 any log
+ deny   ip 10.99.0.0 0.0.0.127 any log
+ deny   ip 127.0.0.0 0.255.255.255 any log
+ deny   ip 0.0.0.0 0.255.255.255 any log
+ remark >>> ICMP Unreachable: Respuestas de diagnC3stico hacia VLAN 10, 20 y 99
+ permit icmp 192.168.30.0 0.0.0.255 192.168.10.0 0.0.0.255 unreachable
+ permit icmp 192.168.30.0 0.0.0.255 192.168.20.0 0.0.0.255 unreachable
+ permit icmp 192.168.30.0 0.0.0.255 10.99.0.0 0.0.0.127 unreachable
+ remark >>> RETORNO CONEXIONES: Respuestas TCP (SSH, HTTPS, Wazuh Dashboard/API, Agentes) e ICMP echo-reply
+ permit tcp 192.168.30.0 0.0.0.255 10.99.0.0 0.0.0.127 established
+ permit tcp 192.168.30.0 0.0.0.255 192.168.10.0 0.0.0.255 established
+ permit tcp 192.168.30.0 0.0.0.255 192.168.20.0 0.0.0.255 established
+ permit icmp 192.168.30.0 0.0.0.255 10.99.0.0 0.0.0.127 echo-reply
+ remark >>> RETORNO WAZUH UDP: Respuestas del SIEM Wazuh hacia agentes en VLAN 10 y 20
+ permit udp host 192.168.30.5 eq 1514 192.168.10.0 0.0.0.255 gt 1023
+ permit udp host 192.168.30.5 eq 1514 192.168.20.0 0.0.0.255 gt 1023
+ remark >>> RETORNO SYSLOG UDP: Respuestas Syslog (UDP 514) del SIEM hacia VLAN 10, 20 y 99
+ permit udp host 192.168.30.5 eq syslog 192.168.10.0 0.0.0.255 gt 1023
+ permit udp host 192.168.30.5 eq syslog 192.168.20.0 0.0.0.255 gt 1023
+ permit udp host 192.168.30.5 eq syslog 10.99.0.0 0.0.0.127 gt 1023
+ remark >>> CRITERIO 1: Aislamiento - Servidores no inician trC!fico inter-VLAN
+ deny   ip 192.168.30.0 0.0.0.255 192.168.10.0 0.0.0.255 log
+ deny   ip 192.168.30.0 0.0.0.255 192.168.20.0 0.0.0.255 log
+ deny   ip 192.168.30.0 0.0.0.255 10.99.0.0 0.0.0.127 log
+ remark >>> Servicios de infraestructura: NTP y DNS hacia el gateway local
+ permit udp 192.168.30.0 0.0.0.255 host 192.168.30.1 eq ntp
+ permit udp 192.168.30.0 0.0.0.255 host 192.168.30.1 eq domain
+ permit tcp 192.168.30.0 0.0.0.255 host 192.168.30.1 eq domain
+ remark >>> SIN INTERNET: Servidores no tienen salida a Internet
+ deny   ip 192.168.30.0 0.0.0.255 any log
+ remark >>> DENY ALL: Captura cualquier paquete restante
+ deny   ip any any log
+ip access-list extended EACL_VLAN99_IN
+ remark >>> ANTI-SPOOFING: Denegar paquetes con origen falsificado
+ deny   ip 192.168.10.0 0.0.0.255 any log
+ deny   ip 192.168.20.0 0.0.0.255 any log
+ deny   ip 192.168.30.0 0.0.0.255 any log
+ deny   ip 127.0.0.0 0.255.255.255 any log
+ deny   ip 0.0.0.0 0.255.255.255 any log
+ remark >>> CRITERIO 3: SSH (TCP 22) - AdministraciC3n remota segura
+ permit tcp 10.99.0.0 0.0.0.127 192.168.10.0 0.0.0.255 eq 22
+ permit tcp 10.99.0.0 0.0.0.127 192.168.20.0 0.0.0.255 eq 22
+ permit tcp 10.99.0.0 0.0.0.127 192.168.30.0 0.0.0.255 eq 22
+ permit tcp 10.99.0.0 0.0.0.127 10.99.0.0 0.0.0.127 eq 22
+ remark >>> CRITERIO 3: HTTPS (TCP 443) - GestiC3n web segura
+ permit tcp 10.99.0.0 0.0.0.127 192.168.10.0 0.0.0.255 eq 443
+ permit tcp 10.99.0.0 0.0.0.127 192.168.20.0 0.0.0.255 eq 443
+ permit tcp 10.99.0.0 0.0.0.127 192.168.30.0 0.0.0.255 eq 443
+ permit tcp 10.99.0.0 0.0.0.127 10.99.0.0 0.0.0.127 eq 443
+ remark >>> CRITERIO 3: SNMP (UDP 161) - Monitoreo de red
+ permit udp 10.99.0.0 0.0.0.127 192.168.10.0 0.0.0.255 eq snmp
+ permit udp 10.99.0.0 0.0.0.127 192.168.20.0 0.0.0.255 eq snmp
+ permit udp 10.99.0.0 0.0.0.127 192.168.30.0 0.0.0.255 eq snmp
+ permit udp 10.99.0.0 0.0.0.127 10.99.0.0 0.0.0.127 eq snmp
+ remark >>> CRITERIO 3: ICMP echo - DiagnC3stico de conectividad (ping) a todas las VLANs
+ permit icmp 10.99.0.0 0.0.0.127 192.168.10.0 0.0.0.255 echo
+ permit icmp 10.99.0.0 0.0.0.127 192.168.20.0 0.0.0.255 echo
+ permit icmp 10.99.0.0 0.0.0.127 192.168.30.0 0.0.0.255 echo
+ permit icmp 10.99.0.0 0.0.0.127 10.99.0.0 0.0.0.127 echo
+ remark >>> WAZUH SIEM: AdministraciC3n y VisualizaciC3n desde VLAN 99 (Web Dashboard, API, Agente, Syslog)
+ permit tcp 10.99.0.0 0.0.0.127 host 192.168.30.5 eq 5601
+ permit tcp 10.99.0.0 0.0.0.127 host 192.168.30.5 eq 55000
+ permit tcp 10.99.0.0 0.0.0.127 host 192.168.30.5 eq 9200
+ permit tcp 10.99.0.0 0.0.0.127 host 192.168.30.5 eq 1514
+ permit udp 10.99.0.0 0.0.0.127 host 192.168.30.5 eq 1514
+ permit tcp 10.99.0.0 0.0.0.127 host 192.168.30.5 eq 1515
+ permit udp 10.99.0.0 0.0.0.127 host 192.168.30.5 eq syslog
+ remark >>> DNS y NTP: ResoluciC3n interna para operaciones de gestiC3n
+ permit udp 10.99.0.0 0.0.0.127 host 10.99.0.1 eq domain
+ permit tcp 10.99.0.0 0.0.0.127 host 10.99.0.1 eq domain
+ permit udp 10.99.0.0 0.0.0.127 host 10.99.0.1 eq ntp
+ remark >>> SEGURIDAD: Bloquear Telnet (23) y TFTP (69) incluso desde TI
+ deny   tcp 10.99.0.0 0.0.0.127 any eq telnet log
+ deny   udp 10.99.0.0 0.0.0.127 any eq tftp log
+ remark >>> DENY ALL: Captura cualquier paquete restante
+ deny   ip any any log
+ip access-list extended EACL_VTY_ACCESS
+ remark >>> CRITERIO 5: Solo VLAN 99 (10.99.0.0/25) puede hacer SSH al router
+ permit tcp 10.99.0.0 0.0.0.127 any eq 22
+ deny   ip any any log
+ip access-list extended EACL_WAN_IN
+ remark >>> BOGON: Bloquear IPs privadas/reservadas desde Internet (RFC 1918)
+ deny   ip 10.0.0.0 0.255.255.255 any log
+ deny   ip 172.16.0.0 0.15.255.255 any log
+ deny   ip 192.168.0.0 0.0.255.255 any log
+ remark >>> BOGON: Bloquear loopback, null, APIPA, multicast, reservado
+ deny   ip 127.0.0.0 0.255.255.255 any log
+ deny   ip 0.0.0.0 0.255.255.255 any log
+ deny   ip 169.254.0.0 0.0.255.255 any log
+ deny   ip 224.0.0.0 15.255.255.255 any log
+ deny   ip 240.0.0.0 15.255.255.255 any log
+ remark >>> PUERTOS PELIGROSOS: Bloquear servicios inseguros desde Internet
+ deny   tcp any any eq telnet log
+ deny   udp any any eq tftp log
+ deny   tcp any any range 135 139 log
+ deny   udp any any range 135 netbios-ss log
+ deny   tcp any any eq 445 log
+ deny   tcp any any eq 3389 log
+ deny   tcp any any eq 1433 log
+ deny   tcp any any eq 3306 log
+ deny   tcp any any eq 5432 log
+ remark >>> RETORNO: Respuestas TCP de conexiones iniciadas internamente
+ permit tcp any any established
+ remark >>> RETORNO: Respuestas DNS y NTP
+ permit udp any eq domain any gt 1023
+ permit udp any eq ntp any gt 1023
+ remark >>> RETORNO: Mensajes ICMP de diagnC3stico esenciales
+ permit icmp any any echo-reply
+ permit icmp any any time-exceeded
+ permit icmp any any unreachable
+ permit icmp any any packet-too-big
+ remark >>> DENY ALL: Todo lo demC!s desde Internet queda bloqueado
+ deny   ip any any log
+!
+logging source-interface GigabitEthernet0/1.30
+logging host 192.168.30.5
+ipv6 ioam timestamp
+!
+!
+!
+control-plane
+!
+banner exec ^C
+**************************************************************************
+* IOSv is strictly limited to use for evaluation, demonstration and IOS  *
+* education. IOSv is provided as-is and is not supported by Cisco's      *
+* Technical Advisory Center. Any use or disclosure, in whole or in part, *
+* of the IOSv Software or Documentation to any third party for any       *
+* purposes is expressly prohibited except as otherwise authorized by     *
+* Cisco in writing.                                                      *
+**************************************************************************^C
+banner incoming ^C
+**************************************************************************
+* IOSv is strictly limited to use for evaluation, demonstration and IOS  *
+* education. IOSv is provided as-is and is not supported by Cisco's      *
+* Technical Advisory Center. Any use or disclosure, in whole or in part, *
+* of the IOSv Software or Documentation to any third party for any       *
+* purposes is expressly prohibited except as otherwise authorized by     *
+* Cisco in writing.                                                      *
+**************************************************************************^C
+banner login ^C
+**************************************************************************
+* IOSv is strictly limited to use for evaluation, demonstration and IOS  *
+* education. IOSv is provided as-is and is not supported by Cisco's      *
+* Technical Advisory Center. Any use or disclosure, in whole or in part, *
+* of the IOSv Software or Documentation to any third party for any       *
+* purposes is expressly prohibited except as otherwise authorized by     *
+* Cisco in writing.                                                      *
+**************************************************************************^C
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ password test123
+ logging synchronous
+ login
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line vty 0 4
+ access-class EACL_VTY_ACCESS in
+ login local
+ transport input ssh
+!
+no scheduler allocate
+!
+end
