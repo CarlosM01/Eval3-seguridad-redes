@@ -8,6 +8,7 @@
 | Evaluación | Formativa Unidad 3: Seguridad perimetral (criterios 3.1.1 y 3.1.2) |
 | Caso | Caso 2 – Logística, Zona Centro |
 | Grupo | Zona Centro |
+| Fecha | 13-11-2026 |
 | Docente | Marcos Pozas |
 | Integrantes y roles | Martín Arroyo – Monitoreo · Andrés Chandía – Documentación · Jasser Flores – Arquitectura · Carlos Mac-Iver – Laboratorio |
 | Plataforma de laboratorio | GNS3 con QEMU-KVM y Docker: firewall y concentrador VPN OPNsense 26.7 (FreeBSD 15.1), switch Cisco IOSv-L2, router ISP Cisco IOSv, SIEM Wazuh 4.14 (manager, indexer y dashboard) |
@@ -26,7 +27,9 @@ Todo el tráfico entre VLAN y hacia el exterior pasa por un solo punto de contro
 
 ![Captura 1. Topología completa del proyecto eval1 en GNS3](img/informe-u3-formativo/01-topologia-gns3.png)
 
-*Captura 1. Topología del laboratorio en GNS3.* El firewall concentra los tres controles (filtrado, VPN e IPS); los vehículos y los usuarios remotos entran por el túnel, y los socios B2B llegarían solo a la DMZ.
+*Captura 1. Topología del laboratorio en GNS3 (13-11-2026, 21:53).* `CA-RAIZ` aparece sin enlaces porque es la CA raíz fuera de línea. `Kali` (en la LAN del vehículo, sin enlaces) y `SoporteTI` (VLAN 99) están apagados; solo se encienden si una prueba los necesita.
+
+El firewall concentra los tres controles (filtrado, VPN e IPS); los vehículos y los usuarios remotos entran por el túnel, y los socios B2B llegarían solo a la DMZ.
 
 ### 1.2 Tabla de direccionamiento
 
@@ -40,6 +43,7 @@ Todo el tráfico entre VLAN y hacia el exterior pasa por un solo punto de contro
 | WAN sede | Externa | 203.0.113.0/30 | 203.0.113.1 | `FW-ZONA-CENTRO` (.2, IP pública fija), `ISP-WAN` (.1) |
 | Red móvil del operador | Externa (CGNAT) | 100.64.20.0/24 | 100.64.20.1 | `FW-VEHICULO-01` (DHCP .10); la sede lo ve como 198.51.100.10 |
 | LAN del vehículo | Remota, por VPN | 172.16.50.0/24 | 172.16.50.1 | `TABLET-CONDUCTOR` (.10), `WEBTERM-VEHICULO` (.20) |
+| Sin red | CA raíz fuera de línea | — | — | `CA-RAIZ` |
 
 Las redes 203.0.113.0/24 y 198.51.100.0/24 son de documentación (RFC 5737) y 100.64.0.0/10 es el rango de CGNAT (RFC 6598): simulan Internet y la red móvil sin usar direcciones reales.
 
@@ -98,7 +102,7 @@ Pendiente de revisión: confirmar si el docente entregó una regla o alerta de r
 
 ## 3. Evidencias de laboratorio
 
-Registros tomados el 13-11-2026 entre 21:04 y 21:15 (hora de Chile) desde las consolas de GNS3. Los equipos registran en UTC (00:04–00:15 del 14-11).
+Los registros de texto (E0 a E6) se tomaron el 13-11-2026 entre 21:04 y 21:15 (hora de Chile) desde las consolas de GNS3. Los equipos registran en UTC (00:04–00:15 del 14-11). Las capturas de pantalla se tomaron después, entre las 21:53 y las 22:13 del mismo día; cada pie indica la hora.
 
 ### E0 · Interfaces y zonas del firewall
 
@@ -112,9 +116,9 @@ SERVIDORES_SIEM (vlan030) -> v4: 192.168.30.1/24
 WAN (vtnet1) -> v4: 203.0.113.2/30
 ```
 
-![Captura 2. GUI de OPNsense, Interfaces → Overview en FW-ZONA-CENTRO](img/vpn-vehiculo/01-fw-zona-centro-interfaces.png)
+![Captura 2. GUI de OPNsense, Interfaces → Overview en FW-ZONA-CENTRO](img/informe-u3-formativo/02-opnsense-interfaces.png)
 
-*Captura 2. Interfaces de `FW-ZONA-CENTRO` en la GUI de OPNsense.*
+*Captura 2. Interfaces → Overview de `FW-ZONA-CENTRO`, abierto desde `WEBTERM-ADMIN` (VLAN 99) el 13-11-2026 a las 22:13. Muestra las cuatro VLAN (10, 20, 30 y 99) sobre `vtnet0`, la WAN en `vtnet1` y la interfaz IPsec `enc0`.*
 
 ### E1 · Conectividad permitida desde la VLAN 10
 
@@ -163,13 +167,13 @@ Con el horario abierto (prueba): `HTTP/1.1 303 SEE OTHER` hacia el WMS y `BLOQUE
   #4, reqid 2, INSTALLED, TUNNEL-in-UDP, ESP:AES_GCM_16-128/ECP_256
 ```
 
-![Captura 3. GUI de OPNsense, VPN → IPsec → Status con el túnel arriba](img/vpn-vehiculo/04-fw-zona-centro-tunel.png)
+![Captura 3. GUI de OPNsense, VPN → IPsec → Status Overview con el túnel arriba](img/informe-u3-formativo/03-opnsense-ipsec-estado.png)
 
-*Captura 3. Estado del túnel IPsec en `FW-ZONA-CENTRO`.*
+*Captura 3. VPN → IPsec → Status Overview de `FW-ZONA-CENTRO` (13-11-2026, 22:13). Fase 1: IKEv2 con `vehiculo-01.empresa.local`. Fase 2: dos Child SA `INSTALLED`, 192.168.20.5/32 ↔ 172.16.50.0/24 (WMS) y 192.168.10.0/24 ↔ 172.16.50.0/24. El segundo sigue negociado, pero las reglas que lo usaban están deshabilitadas y la regla final R-99 bloquea ese tráfico (evidencia E3). Se elimina al rehacer la VPN con certificados en la Fase 2.*
 
 ### E5 · Administración solo desde la VLAN 99
 
-`PKI-CA` (10.99.0.10); flujos F-04 y F-06:
+`PKI-CA` (10.99.0.10); flujo F-04:
 
 ```text
 == https://10.99.0.1            (GUI del firewall)
@@ -186,7 +190,7 @@ Flujo F-06. Wazuh tiene 15 alertas `filterlog` del firewall con la regla 87702, 
 
 ![Captura 4. Dashboard de Wazuh con eventos del firewall](img/informe-u3-formativo/04-wazuh-eventos-firewall.png)
 
-*Captura 4. Eventos del firewall en el dashboard de Wazuh (Threat Hunting → Events, filtro `rule.groups:pfsense`, últimos 7 días), abierto desde `WEBTERM-ADMIN` (VLAN 99) el 14-11-2026 a las 00:57 UTC. Muestra 17 alertas de la regla 87702: las 15 del momento de las pruebas y 2 nuevas generadas después.*
+*Captura 4. Eventos del firewall en el dashboard de Wazuh (Threat Hunting → Events, filtro `rule.groups:pfsense`, últimos 7 días), abierto desde `WEBTERM-ADMIN` (VLAN 99) el 14-11-2026 a las 00:57 UTC (13-11, 21:57 en Chile). Muestra 17 alertas de la regla 87702: las 15 del momento de las pruebas y 2 nuevas generadas después.*
 
 ---
 

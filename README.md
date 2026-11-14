@@ -27,7 +27,7 @@ Red segmentada de una empresa logística (VLAN 10, 20, 30 y 99) con firewall OPN
 | Extensión VPN al vehículo | Terminado (2026-11-11) | [odd/tasks/vpn-vehiculo.md](odd/tasks/vpn-vehiculo.md) |
 | Wazuh en Docker | Terminado (2026-11-11) | [odd/tasks/wazuh-docker.md](odd/tasks/wazuh-docker.md) |
 | Endurecimiento según el informe | Fase 1 en curso: T1.1 y T1.2 terminadas (2026-11-13), PKI con CRL y OCSP; siguiente: T1.3. Resumen en [docs/INFORME_MEJORAS.md](docs/INFORME_MEJORAS.md) | [odd/tasks/informe-hardening.md](odd/tasks/informe-hardening.md) |
-| Unidad 3, seguridad perimetral (entrega sumativa 16-11) | L0–L2 terminadas (2026-11-13): respaldo, reglas con registro y mínimo privilegio, denegación final R-99 y horario de despacho. Siguen L3 (VPN con certificados) y L4 (Suricata) | [odd/tasks/u3-perimetral.md](odd/tasks/u3-perimetral.md) |
+| Unidad 3, seguridad perimetral (entrega sumativa 16-11) | L0–L2 terminadas (2026-11-13): respaldo, reglas con registro y mínimo privilegio, denegación final R-99 y horario de despacho. Informe formativo con evidencias y capturas listo ([docs/INFORME_U3_FORMATIVO.md](docs/INFORME_U3_FORMATIVO.md)). Siguen L3 (VPN con certificados) y L4 (Suricata) | [odd/tasks/u3-perimetral.md](odd/tasks/u3-perimetral.md) |
 
 ## Línea base
 
