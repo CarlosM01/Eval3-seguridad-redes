@@ -214,7 +214,19 @@ Para la Fase 2 (sumativa) quedan: autenticación de la VPN por certificados, act
 
 ---
 
-## 6. Referencias
+## 6. Declaración de uso de inteligencia artificial
+
+En este trabajo el grupo usó **Claude Opus 5.5** (Anthropic), a través de la herramienta Claude Code, como asistente. Se usó para:
+
+- redactar y ordenar la documentación del laboratorio y dar formato a este informe (Markdown y LaTeX);
+- preparar scripts de configuración de OPNsense (por ejemplo, las reglas con registro y el horario de despacho) y los comandos de prueba;
+- tomar y recortar las capturas de pantalla del laboratorio.
+
+Las evidencias provienen de los equipos del laboratorio. El grupo revisó el contenido y es responsable de él.
+
+---
+
+## 7. Referencias
 
 - INCIBE (2020). *Recomendaciones de seguridad en el empleo de redes VPN.* <https://www.incibe.es/empresas/blog/recomendaciones-seguridad-el-empleo-redes-vpn>
 - INCIBE (2020). *¿Qué son y para qué sirven los SIEM, IDS e IPS?* <https://www.incibe.es/empresas/blog/son-y-sirven-los-siem-ids-e-ips>
