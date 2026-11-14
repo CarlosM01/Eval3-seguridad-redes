@@ -6,7 +6,7 @@ Este documento registra, a medida que avanza el trabajo, cada mejora de segurida
 - **El "antes":** [linea-base/INFRAESTRUCTURA.md](linea-base/INFRAESTRUCTURA.md), congelado a propósito como línea base.
 - **El plan completo y la bitácora técnica (en inglés):** [../odd/tasks/informe-hardening.md](../odd/tasks/informe-hardening.md).
 
-> Última actualización: 2026-11-13, tras la tarea T1.2 (emisión, revocación, CRL y OCSP).
+> Última actualización: 2026-11-13 (noche), tras las tareas L1 y L2 de la Unidad 3: reglas con registro, mínimo privilegio, denegación final y horario de despacho ([U3_SEGURIDAD_PERIMETRAL.md](U3_SEGURIDAD_PERIMETRAL.md)).
 
 ---
 
@@ -16,7 +16,7 @@ Este documento registra, a medida que avanza el trabajo, cada mejora de segurida
 |---|---|---|
 | 0 | Respaldos y verificación de lo que soporta el laboratorio | Terminada (2026-11-13) |
 | 1 | PKI propia: CA raíz fuera de línea y CA emisora con claves en HSM | En curso: T1.1 y T1.2 terminadas; falta T1.3 (certificados propios de los firewalls) |
-| 2 | Endurecer lo existente: VPN con certificados, TLS 1.3 en el WMS, reglas mínimas, gestión del switch | Pendiente |
+| 2 | Endurecer lo existente: VPN con certificados, TLS 1.3 en el WMS, reglas mínimas, gestión del switch | En curso: reglas mínimas aplicadas en parte (T2.3, junto con la Unidad 3); falta quitar el Child SA de la VLAN 10 y pasar el WMS a 443 |
 | 3 | Syslog sobre TLS hacia Wazuh y relé syslog en VLAN 99 | Pendiente |
 | 4 | Detección: IPS en el firewall e IDS de red en un puerto espejo | Pendiente |
 | 5 | Canales nuevos (acceso remoto C4, pasarela AS2 C3a) y prueba de aceptación | Pendiente |
@@ -33,6 +33,10 @@ Una fila por cambio ya aplicado en el laboratorio.
 | Emisión de certificados | — | `pki-emitir` con cuatro perfiles (servidor, equipo, usuario, socio). Exige el algoritmo del informe (ECDSA P-256 1 año; RSA-3072 2 años para socios) y la clave se genera en el equipo que la usa | POL-04, Cuadro D | T1.2 |
 | Revocación | No existía (una PSK no se puede revocar por equipo) | `pki-revocar`; CRL de la emisora válida 7 días, regenerada cada día y en cada revocación; OCSP en 10.99.0.10:2560 | POL-04: "CRL de la emisora cada 7 días [...] OCSP" | T1.2 |
 | Firewall `FW-ZONA-CENTRO` | Sin acceso de las VLAN 10/20/30 a la VLAN 99 | Regla 95: VLAN 10/20/30 → 10.99.0.10 solo TCP 80 (CRL) y 2560 (OCSP) | POL-04 (validación de revocación); excepción de texto claro prevista (objetos firmados) | T1.2 |
+| Registro del firewall | Ninguna regla registraba; solo quedaba en el log lo que caía en el bloqueo por defecto, sin regla propia | Todas las reglas registran. Cada interfaz termina en una regla explícita de bloqueo con registro (R-99), y cada descripción empieza con su código R-xx | POL-06 (monitoreo); condición 3 del caso U3 | U3 L1 |
+| Alcance del vehículo (C2) | El vehículo llegaba a toda la VLAN 10 y la VLAN 10 al vehículo (reglas 10 y 200) | Esas dos reglas quedan deshabilitadas: el vehículo solo llega al WMS | POL-05 (mínimo privilegio), canal C2 | U3 L1 (parte de T2.3) |
+| Salida a Internet de la VLAN 10 | DNS, NTP, HTTP 80 y HTTPS | DNS, NTP y HTTPS; HTTP 80 sin cifrar queda bloqueado | POL-01 (canales cifrados) | U3 L1 (parte de T2.3) |
+| Horario del vehículo | El vehículo llegaba al WMS a cualquier hora | Solo de lunes a sábado, de 07:00 a 20:00 (horario `HORARIO_DESPACHO`); fuera de horario se cortan sus conexiones | POL-05; regla avanzada de la guía U3 | U3 L2 |
 
 ## 3. Detalle de cada mejora
 
@@ -121,6 +125,33 @@ docker exec GNS3.PKI-CA.54ea9572-79a3-48cc-9bb4-8c652368f315 sh -c 'cd /srv/ca/e
 
 **Problema encontrado y corregido:** el respondedor `openssl ocsp` atiende de a una conexión. Una conexión vacía (un simple escaneo de puertos) lo dejó colgado y consumiendo CPU. Ahora lighttpd recibe las conexiones en 2560 y solo le pasa peticiones completas.
 
+### 3.3 U3 L1–L2: reglas con registro, mínimo privilegio y horario (2026-11-13)
+
+**Qué pide:** la guía de la Unidad 3 exige reglas básicas y avanzadas (objetos, horarios, denegación por defecto y registro por regla) y eventos permitidos y bloqueados ligados a una regla. El informe de la U2 limita el canal C2 al WMS (POL-05) y pide canales cifrados (POL-01).
+
+**Qué se hizo** (detalle y tabla R-xx en [U3_SEGURIDAD_PERIMETRAL.md](U3_SEGURIDAD_PERIMETRAL.md)):
+
+| Elemento | Detalle |
+|---|---|
+| Respaldo | `/conf/backup/config-pre-u3.xml` en `FW-ZONA-CENTRO` y en `FW-VEHICULO-01`. El vehículo no cambió |
+| Registro | Las 16 reglas de paso activas de la sede registran en el log (también las 2 deshabilitadas, por si se reactivan) |
+| R-99 | Regla 9000 *block + log* en VLAN 10, 20, 30, 99, IPsec y WAN |
+| Mínimo privilegio | Reglas 10 (VLAN 10 → vehículo) y 200 (vehículo → VLAN 10) deshabilitadas; regla 30 sin HTTP 80 |
+| Horario | `HORARIO_DESPACHO` (lunes a sábado, 10:00–23:00 UTC = 07:00–20:00 Chile) en la regla 210. OPNsense agregó solo la tarea cron que reevalúa el horario cada 15 minutos |
+| Objetos | Alias `WMS_ODOO`, `PUERTOS_WMS` y `PUERTOS_SALIDA_V10` |
+| Script | [../configs/opnsense/u3-reglas.php](../configs/opnsense/u3-reglas.php) |
+
+**Cómo se comprobó** (13-11, 21:09–21:15 Chile):
+
+- [x] `alpine-1` (VLAN 10) → WMS 8069: `303`; → `https://example.com`: `200`; → `http://example.com`: bloqueado (antes del cambio, `200`); → `postgres-1:5432`: bloqueado.
+- [x] `TABLET-CONDUCTOR`, fuera de horario → WMS: sin respuesta, con el bloqueo registrado por R-99 de IPsec; → `alpine-1`: 100 % de pérdida.
+- [x] Con el horario abierto por un momento a todo el día: tablet → WMS `303` y → `postgres-1` bloqueado. Después se restauró el horario y la regla volvió a quedar inactiva.
+- [x] El túnel siguió `ESTABLISHED` con sus 2 Child SA durante todo el cambio.
+- [x] La VLAN 99 sigue administrando: `PKI-CA` → `https://10.99.0.1` `200`, → Wazuh 5601 `302`, → SSH del switch abierto.
+- [x] El log del firewall muestra líneas `pass` y `block` con la etiqueta de cada regla (113 líneas `pass` en los primeros minutos).
+
+**Observaciones:** el Child SA 192.168.10.0/24 ↔ 172.16.50.0/24 sigue negociado, aunque el firewall ya no deja pasar ese tráfico. Se quita al rehacer la VPN con certificados (T2.1). Wazuh no alerta sobre accesos permitidos (ver L13).
+
 ---
 
 ## 4. Limitaciones del entorno virtualizado y desviaciones del informe
@@ -142,6 +173,8 @@ El laboratorio corre completo en un solo equipo con GNS3, contenedores Docker y 
 | L7 | Credenciales robustas | Contraseñas del laboratorio en texto plano (`test123`) en la documentación | Es un laboratorio de estudio; se documentan a propósito para poder evaluarlo. No se reutilizan en entornos reales | Confirmada |
 | L8 | Respondedor OCSP de producción, en el concentrador VPN y la pasarela AS2 | Un único respondedor central (`openssl ocsp`, de un proceso) detrás de lighttpd, en `PKI-CA` | `openssl ocsp` está pensado para pruebas. El proxy lo protege de conexiones colgadas, pero atiende las consultas de a una. Su puerto interno 2561 queda accesible desde la VLAN 99, el segmento de confianza. Para el volumen del laboratorio alcanza | Confirmada (T1.2) |
 | L9 | CRL publicada sin cortes | CRL válida 7 días, regenerada cada día por `PKI-CA` | Si el laboratorio queda apagado más de 7 días, la CRL vence y los equipos que la exigen rechazan certificados hasta que `PKI-CA` arranque y la regenere | Confirmada (T1.2) |
+| L12 | Horario de despacho en hora local | El horario se escribe en UTC (10:00–23:00), porque el firewall usa UTC | Las horas en UTC deben ajustarse a mano cuando Chile cambia entre UTC−3 y UTC−4. Los registros del firewall quedan en UTC | Confirmada (U3 L2) |
+| L13 | El SIEM recibe los eventos relevantes del perímetro | Wazuh recibe todo el `filterlog`, pero sus reglas incluidas solo alertan sobre bloqueos repetidos desde un mismo origen (regla 87702) | Un acceso permitido o un bloqueo aislado quedan en el log del firewall, pero no aparecen como alerta en el dashboard. Se resolverá con una regla local en Wazuh (U3 L5) | Confirmada (U3 L1) |
 
 ### 4.2 El servidor GNS3 compartido
 
@@ -170,4 +203,4 @@ Estos controles del informe pertenecen a la aplicación, a la nube o a los dispo
 
 ## 5. Próximo paso
 
-T1.3: claves SSH propias en cada firewall y certificado de la interfaz web emitido por la CA (`fw-centro`, `vehiculo-01`), con la cadena importada en el Firefox de `WEBTERM-ADMIN`, para que la interfaz web abra sin advertencias.
+Según el plan de la Unidad 3 (entrega sumativa del 16-11): T2.1, VPN del vehículo con certificados ECDSA, ChaCha20-Poly1305, X25519 y MOBIKE (U3 L3), y T4.1, Suricata en `FW-ZONA-CENTRO` con alertas a Wazuh (U3 L4). T1.3 (certificados propios de los firewalls) queda para después de la entrega.

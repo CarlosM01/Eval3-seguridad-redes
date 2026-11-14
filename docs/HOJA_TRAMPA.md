@@ -73,9 +73,12 @@ pfctl -sr | less                  reglas cargadas
 pfctl -ss | grep 172.16.50        estados de la VPN
 tail -f /var/log/filter/latest.log
 configctl filter reload           recarga reglas
+grep 'match,block' /var/log/filter/latest.log | tail      bloqueos registrados (R-99 y otros)
+pfctl -sr | grep <etiqueta>       qué regla tiene esa etiqueta del log
+crontab -l | grep schedules       tarea que reevalúa HORARIO_DESPACHO cada 15 min
 ```
 
-Web: `https://10.99.0.1`, solo desde la VLAN 99 (WEBTERM-ADMIN, SoporteTI o Mint-1).
+Web: `https://10.99.0.1`, solo desde la VLAN 99 (WEBTERM-ADMIN, SoporteTI o Mint-1). Log por regla: *Firewall → Log Files → Live View*, filtrando por `R-01`, `R-99`, etc. Las reglas y el horario de la U3 están en [U3_SEGURIDAD_PERIMETRAL.md](U3_SEGURIDAD_PERIMETRAL.md).
 
 ## FW-VEHICULO-01 (OPNsense, `root`, opción 8 = shell)
 

@@ -123,14 +123,14 @@ Las cuatro VLAN van sobre `vtnet0`, que es el trunk hacia `SW-ZONA-CENTRO` Gi0/0
 
 ### 3.3 Reglas de firewall (criterios del ejercicio)
 
-pf tiene estado, así que las respuestas no necesitan regla. La regla 4 de [INFRAESTRUCTURA.md §8](linea-base/INFRAESTRUCTURA.md) (las respuestas a la VLAN 99 se descartaban) desaparece.
+Desde el 2026-11-13 (U3, [U3_SEGURIDAD_PERIMETRAL.md](U3_SEGURIDAD_PERIMETRAL.md)) todas las reglas registran en el log, su descripción empieza con el código R-xx del informe de la Unidad 3 y cada interfaz termina con una regla de bloqueo con registro (R-99). pf tiene estado, así que las respuestas no necesitan regla. La regla 4 de [INFRAESTRUCTURA.md §8](linea-base/INFRAESTRUCTURA.md) (las respuestas a la VLAN 99 se descartaban) desaparece.
 
 | # | Interfaz | Origen → Destino | Puertos | Criterio |
 |---|---|---|---|---|
-| 10 | VLAN 10 | VLAN 10 → `RED_VEHICULO` | todos | VPN |
+| 10 | VLAN 10 | VLAN 10 → `RED_VEHICULO` | todos | VPN. **Deshabilitada** desde el 2026-11-13 (mínimo privilegio, U3) |
 | 20 | VLAN 10 | VLAN 10 → `SIEM_WAZUH` | 514, 1514, 1515 TCP/UDP | 2 |
-| 25 | VLAN 10 | VLAN 10 → 192.168.20.5 (`odoo-1`) | 8069 TCP | Excepción puntual al criterio 1: usuarios hacia Odoo |
-| 30 | VLAN 10 | VLAN 10 → no `RFC1918` | 53, 80, 123, 443 TCP/UDP | 4 |
+| 25 | VLAN 10 | VLAN 10 → `WMS_ODOO` (192.168.20.5) | `PUERTOS_WMS` (8069 TCP) | Excepción puntual al criterio 1: usuarios hacia Odoo. U3: R-01 |
+| 30 | VLAN 10 | VLAN 10 → no `RFC1918` | `PUERTOS_SALIDA_V10`: 53, 123, 443 TCP/UDP (sin 80 desde el 2026-11-13) | 4. U3: R-05 |
 | 40 | VLAN 10 | VLAN 10 → no `RFC1918` | ICMP | 4 |
 | 50 | VLAN 20 | VLAN 20 → `SIEM_WAZUH` | 514, 1514, 1515 TCP/UDP | 2 |
 | 60 | VLAN 30 | VLAN 30 → 192.168.30.1 | 53, 123 TCP/UDP | DNS/NTP al gateway |
@@ -138,11 +138,12 @@ pf tiene estado, así que las respuestas no necesitan regla. La regla 4 de [INFR
 | 80 | VLAN 99 | VLAN 99 → VLAN 10/20/30 | ICMP | 3 |
 | 90 | VLAN 99 | VLAN 99 → `SIEM_WAZUH` | 443, 514, 1514, 1515, 5601, 9200, 55000 | 3 |
 | 95 | VLAN 10, 20 y 30 | Cada VLAN → `PKI_CA` (10.99.0.10) | 80, 2560 TCP (`PUERTOS_PKI`) | CRL y OCSP de la PKI (2026-11-13, [PKI.md](PKI.md)) |
-| 200 | IPsec | `RED_VEHICULO` → VLAN 10 | todos | VPN |
-| 210 | IPsec | `RED_VEHICULO` → 192.168.20.5 (`odoo-1`) | 8069 TCP | VPN: solo Odoo de la VLAN 20 |
+| 200 | IPsec | `RED_VEHICULO` → VLAN 10 | todos | VPN. **Deshabilitada** desde el 2026-11-13 (mínimo privilegio, U3) |
+| 210 | IPsec | `RED_VEHICULO` → `WMS_ODOO` | `PUERTOS_WMS` | VPN: solo Odoo de la VLAN 20, y desde el 2026-11-13 solo en el horario `HORARIO_DESPACHO` (lunes a sábado 07:00–20:00 Chile). U3: R-02 |
 | 300 | WAN | cualquiera → IP WAN | UDP 500 | VPN: IKE |
 | 310 | WAN | cualquiera → IP WAN | UDP 4500 | VPN: NAT-T |
 | 320 | WAN | cualquiera → IP WAN | ESP | VPN |
+| 9000 | Todas (VLAN 10, 20, 30, 99, IPsec y WAN) | cualquiera → cualquiera | todos | **Bloquear con registro** (U3: R-99), desde el 2026-11-13 |
 
 - **Criterio 1** (aislamiento entre VLANs): lo cumple el bloqueo por defecto. La antigua regla 25 (`odoo-1` en la VLAN 10 → `postgres-1` 5432) se quitó el 2026-11-11: los dos están ahora en la VLAN 20 y no pasan por el firewall. El número 25 lo usa ahora la regla VLAN 10 → Odoo 8069.
 - **Criterio 5** (solo la VLAN 99 entra por SSH): SSH escucha solo en MGMT_TI, y la regla *anti-lockout* de OPNsense solo existe en esa interfaz.
@@ -204,6 +205,9 @@ Con `trap|start`, el vehículo levanta el túnel al arrancar y lo vuelve a levan
 | `alpine-1` (VLAN 10) → 192.168.20.5:8069 | ✅ `303 SEE OTHER` (regla 25) |
 | `alpine-1` → ping 192.168.20.5, 192.168.20.5:22, 192.168.20.4:5432 | ✅ bloqueados |
 | `odoo-1` → `postgres-1` | ✅ conecta; PostgreSQL ve el cliente 192.168.20.5 |
+| **U3, reglas con registro y horario** (2026-11-13, 21:10 Chile): `TABLET-CONDUCTOR` → `http://192.168.20.5:8069` fuera del horario de despacho | ✅ sin respuesta; bloqueo registrado por la regla 9000 (R-99) de IPsec. Con el horario abierto a todo el día (prueba): `303`. Horario restaurado |
+| `TABLET-CONDUCTOR` → `alpine-1` (VLAN 10) | ✅ bloqueado desde que se deshabilitó la regla 200 (100 % de pérdida) |
+| `alpine-1` → `http://example.com` / `https://example.com` | ✅ 80 bloqueado (antes 200) / 443 `200 OK` |
 
 ![WEBTERM-VEHICULO: Odoo de la sede abierto desde el vehículo](img/vpn-vehiculo/05-webterm-odoo.png)
 
@@ -240,6 +244,8 @@ Los firewalls se configuraron por la consola serie, con scripts PHP que usan los
 | `enc0-rule.php`, `add-rule.php` | Reglas que se agregan después: la interfaz IPsec (`enc0`) solo existe con IPsec activo |
 | `pki-regla.php` | Regla 95 (VLAN 10/20/30 → `PKI-CA` TCP 80 y 2560) y alias `PKI_CA`, `PUERTOS_PKI`. Después: `configctl filter reload` y `configctl filter refresh_aliases` |
 | `odoo-vlan20.php centro\|vehiculo` | Odoo en la VLAN 20: en la sede quita la regla 25 antigua, agrega las reglas 25 (VLAN 10 → 8069) y 210 (vehículo → 8069) y el Child SA de 192.168.20.5; en el vehículo agrega el Child SA. Después: `configctl filter reload` (sede) y `pluginctl -c ipsec` (ambos) |
+| `u3-reglas.php` | U3 (2026-11-13): registro en todas las reglas de la sede, códigos R-xx, reglas 10 y 200 deshabilitadas, regla 30 sin HTTP 80, horario `HORARIO_DESPACHO` en la regla 210, alias `WMS_ODOO`, `PUERTOS_WMS` y `PUERTOS_SALIDA_V10`, y regla 9000 de bloqueo con registro en cada interfaz. Después: `configctl filter reload` y `configctl filter refresh_aliases`. Detalle en [U3_SEGURIDAD_PERIMETRAL.md](U3_SEGURIDAD_PERIMETRAL.md) |
+| `u3-horario-prueba.php` | Cambia las horas de `HORARIO_DESPACHO` para probar la regla 210 fuera de horario (y para restaurarlas) |
 
 Orden en cada firewall: `fw-*.php` → `ipsec-enable.php` → `reboot` → `pluginctl -c ipsec` → `enc0-rule.php` / `add-rule.php` → `configctl filter reload`.
 
