@@ -18,6 +18,7 @@ Red segmentada de una empresa logística (VLAN 10, 20, 30 y 99) con firewall OPN
 | Las mejoras aplicadas (antes → después), cómo se comprobaron y las limitaciones del entorno virtualizado | [docs/INFORME_MEJORAS.md](docs/INFORME_MEJORAS.md) |
 | Saber qué falta por hacer | [odd/tasks/informe-hardening.md](odd/tasks/informe-hardening.md) |
 | La evaluación de la Unidad 3 (seguridad perimetral): direccionamiento, Matriz 1, reglas R-xx con sus pruebas y horario de despacho | [docs/U3_SEGURIDAD_PERIMETRAL.md](docs/U3_SEGURIDAD_PERIMETRAL.md) |
+| El informe formativo de la Unidad 3 para entregar (Matriz 1, Tabla 2, evidencias E0–E6 con capturas) | [docs/INFORME_U3_FORMATIVO.md](docs/INFORME_U3_FORMATIVO.md) |
 
 ## Estado del trabajo
 
