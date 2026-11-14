@@ -85,7 +85,7 @@ El riesgo residual se concentra en lo que sí debe pasar: un usuario legítimo c
 
 ### 2.2 Interpretación de la referencia
 
-El docente no entregó una regla o alerta de referencia antes de esta entrega. Por eso se interpreta la regla del túnel del vehículo hacia el WMS que existe en el laboratorio.
+Pendiente de revisión: confirmar si el docente entregó una regla o alerta de referencia. Mientras tanto, se interpreta la regla del túnel del vehículo hacia el WMS que existe en el laboratorio.
 
 | Elemento | Interpretación |
 |---|---|
