@@ -203,7 +203,7 @@ Para la Fase 2 (sumativa) quedan: autenticación de la VPN por certificados, act
 | Fecha | Paso | Trabajo realizado | Integrantes presentes | Pendientes |
 |---|---|---|---|---|
 | Septiembre de 2026 (aprox.) | Montaje | Topología base en GNS3: VLAN 10/20/30/99, firewall OPNsense, Wazuh | Los cuatro integrantes | — |
-| Noviembre de 2026 (aprox. 06-11) | Montaje | Actualización de la topología base | Los cuatro integrantes | — |
+| 09-11-2026 | Montaje | Actualización de la topología base | Los cuatro integrantes | — |
 | 11-11-2026 | 1-A | VPN sede ↔ vehículo y Wazuh en Docker | Los cuatro integrantes | — |
 | 13-11-2026 | 1-A, 1-B | PKI del laboratorio; revisión de interfaces y pruebas de conectividad; Matriz 1 | Los cuatro integrantes | — |
 | 13-11-2026 | 2 | Tabla 2 e interpretación de la referencia; integración del informe formativo | Los cuatro integrantes | Retroalimentación del docente (llega después de la entrega) |
