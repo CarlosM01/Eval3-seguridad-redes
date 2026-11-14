@@ -19,6 +19,7 @@ Red segmentada de una empresa logística (VLAN 10, 20, 30 y 99) con firewall OPN
 | Saber qué falta por hacer | [odd/tasks/informe-hardening.md](odd/tasks/informe-hardening.md) |
 | La evaluación de la Unidad 3 (seguridad perimetral): direccionamiento, Matriz 1, reglas R-xx con sus pruebas y horario de despacho | [docs/U3_SEGURIDAD_PERIMETRAL.md](docs/U3_SEGURIDAD_PERIMETRAL.md) |
 | El informe formativo de la Unidad 3 para entregar (Matriz 1, Tabla 2, evidencias E0–E6 con capturas) | [docs/INFORME_U3_FORMATIVO.md](docs/INFORME_U3_FORMATIVO.md) |
+| Ese mismo informe en PDF con la plantilla INACAP: fuente LaTeX en `docs/latex/`; se compila con `tectonic INFORME_U3_FORMATIVO.tex` dentro de esa carpeta (el PDF no se sube a Git) | [docs/latex/INFORME_U3_FORMATIVO.tex](docs/latex/INFORME_U3_FORMATIVO.tex) |
 
 ## Estado del trabajo
 
