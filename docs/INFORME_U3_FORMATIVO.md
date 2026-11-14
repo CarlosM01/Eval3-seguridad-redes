@@ -7,9 +7,9 @@
 | Asignatura | Seguridad en Redes (CI3062) · Sección CI3062_N6_C2 |
 | Evaluación | Formativa Unidad 3: Seguridad perimetral (criterios 3.1.1 y 3.1.2) |
 | Caso | Caso 2 – Logística, Zona Centro |
-| Grupo | [N] |
+| Grupo | Zona Centro |
 | Docente | Marcos Pozas |
-| Integrantes y roles | Martín Arroyo – [rol] · Andrés Chandía – [rol] · Jasser Flores – [rol] · Carlos Mac-Iver – [rol] (roles de la guía: Arquitectura, Laboratorio, Monitoreo, Documentación) |
+| Integrantes y roles | Martín Arroyo – Monitoreo · Andrés Chandía – Documentación · Jasser Flores – Arquitectura · Carlos Mac-Iver – Laboratorio |
 | Plataforma de laboratorio | GNS3 con QEMU-KVM y Docker: firewall y concentrador VPN OPNsense 26.7 (FreeBSD 15.1), switch Cisco IOSv-L2, router ISP Cisco IOSv, SIEM Wazuh 4.14 (manager, indexer y dashboard) |
 | IDS/IPS | Suricata 8.0.6, incluido en OPNsense (disponibilidad verificada; se activa en la Fase 2) |
 | Documentación del fabricante | OPNsense Handbook, <https://docs.opnsense.org/> (firewall, IPsec, IDS/IPS, registro y respaldo) |
@@ -85,7 +85,7 @@ El riesgo residual se concentra en lo que sí debe pasar: un usuario legítimo c
 
 ### 2.2 Interpretación de la referencia
 
-> [Reemplazar si el docente entregó una regla o alerta propia.] A falta de esa referencia, se interpreta la regla del túnel del vehículo hacia el WMS que existe en el laboratorio.
+El docente no entregó una regla o alerta de referencia antes de esta entrega. Por eso se interpreta la regla del túnel del vehículo hacia el WMS que existe en el laboratorio.
 
 | Elemento | Interpretación |
 |---|---|
@@ -205,7 +205,7 @@ Para la Fase 2 (sumativa) quedan: autenticación de la VPN por certificados, act
 | [completar] | Montaje | Topología base en GNS3: VLAN 10/20/30/99, firewall OPNsense, Wazuh | [completar] | — |
 | 11-11-2026 | 1-A | VPN sede ↔ vehículo y Wazuh en Docker | [completar] | — |
 | 13-11-2026 | 1-A, 1-B | PKI del laboratorio; revisión de interfaces y pruebas de conectividad; Matriz 1 | [completar] | — |
-| 13-11-2026 | 2 | Tabla 2 e interpretación de la referencia; integración del informe formativo | [completar] | Esperar la retroalimentación del docente |
+| 13-11-2026 | 2 | Tabla 2 e interpretación de la referencia; integración del informe formativo | [completar] | Retroalimentación del docente (llega después de la entrega) |
 
 ---
 
@@ -217,4 +217,4 @@ Para la Fase 2 (sumativa) quedan: autenticación de la VPN por certificados, act
 - NIST SP 800-41 Rev. 1, *Guidelines on Firewalls and Firewall Policy*; NIST SP 800-77 Rev. 1, *Guide to IPsec VPNs*; NIST SP 800-94, *Guide to Intrusion Detection and Prevention Systems*.
 - ISO/IEC 27002:2022, controles 5.15 (control de acceso), 8.20 (seguridad de redes) y 8.22 (segregación de redes).
 - OPNsense Handbook. <https://docs.opnsense.org/>
-- Grupo [N] (2026). *Informe Técnico Ajustado – Caso 2 Logística, Unidad 2 (CI3062).*
+- Grupo Zona Centro (2026). *Informe Técnico Ajustado – Caso 2 Logística, Unidad 2 (CI3062).*
