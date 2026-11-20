@@ -1,0 +1,46 @@
+<!-- U3 summative (CI3062, case 2): events E-01..E-04 of the report. -->
+<group name="ids,suricata,opnsense,u3,">
+  <rule id="100200" level="0">
+    <decoded_as>opnsense-suricata-eve</decoded_as>
+    <field name="event_type">\.+</field>
+    <description>Suricata (OPNsense): evento EVE.</description>
+  </rule>
+  <rule id="100201" level="10">
+    <if_sid>100200</if_sid>
+    <field name="event_type">^alert$</field>
+    <field name="alert.action">^blocked$</field>
+    <description>E-03 Suricata IPS bloqueo: $(alert.signature) desde $(src_ip) hacia $(dest_ip):$(dest_port).</description>
+    <mitre><id>T1046</id></mitre>
+    <group>attack,ips_drop,</group>
+  </rule>
+  <rule id="100202" level="6">
+    <if_sid>100200</if_sid>
+    <field name="event_type">^alert$</field>
+    <description>Suricata IDS alerta: $(alert.signature) desde $(src_ip) hacia $(dest_ip):$(dest_port).</description>
+  </rule>
+</group>
+
+<group name="pfsense,opnsense,u3,">
+  <!-- E-01: vehicle (IPsec, enc0) blocked by R-99 outside HORARIO_DESPACHO. -->
+  <rule id="100210" level="7">
+    <if_sid>87701</if_sid>
+    <match>,enc0,match,block,</match>
+    <description>E-01 Firewall: bloqueo en el tunel IPsec del vehiculo (R-99, fuera de HORARIO_DESPACHO) desde $(srcip) hacia $(dstip):$(dstport).</description>
+    <group>access_denied,</group>
+  </rule>
+  <!-- E-04: remote VPN client blocked by R-03B (VLAN 99 or database). -->
+  <rule id="100211" level="8">
+    <if_sid>87701</if_sid>
+    <match>,ovpns1,match,block,</match>
+    <description>E-04 Firewall: bloqueo R-03B desde la VPN remota ($(srcip)) hacia $(dstip):$(dstport).</description>
+    <group>access_denied,policy_violation,</group>
+  </rule>
+  <!-- E-02 complement: single block of the database from VLAN 10 (R-01B); 87702 correlates repeats. -->
+  <rule id="100212" level="6">
+    <if_sid>87701</if_sid>
+    <match>,vlan010,match,block,</match>
+    <dstip>192.168.20.4</dstip>
+    <description>E-02 Firewall: bloqueo R-01B de la BD PostgreSQL desde la VLAN 10 ($(srcip)).</description>
+    <group>access_denied,</group>
+  </rule>
+</group>

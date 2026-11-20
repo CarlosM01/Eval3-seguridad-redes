@@ -1,8 +1,8 @@
 Building configuration...
 
-Current configuration : 4298 bytes
+Current configuration : 4391 bytes
 !
-! Last configuration change at 14:47:04 UTC Wed Nov 11 2026
+! Last configuration change at 21:38:58 UTC Fri Nov 20 2026
 !
 version 15.9
 service timestamps debug datetime msec
@@ -96,8 +96,8 @@ interface GigabitEthernet0/2
  media-type rj45
 !
 interface GigabitEthernet0/3
- no ip address
- shutdown
+ description CLIENTES EXTERNOS (Internet simulada: supervisor remoto / socio B2B)
+ ip address 192.0.2.1 255.255.255.0
  duplex auto
  speed auto
  media-type rj45

@@ -4,6 +4,9 @@ COPY --chmod=400 certs/root-ca.pem /etc/ssl/root-ca.pem
 COPY --chmod=400 certs/wazuh.manager.pem /etc/ssl/filebeat.pem
 COPY --chmod=400 certs/wazuh.manager-key.pem /etc/ssl/filebeat.key
 COPY manager/ossec.conf /wazuh-config-mount/etc/ossec.conf
+# U3 summative: Suricata EVE over syslog from OPNsense and events E-01..E-04 (docs/U3_SUMATIVA.md).
+COPY --chown=wazuh:wazuh manager/local/u3_decoder.xml /var/ossec/etc/decoders/u3_decoder.xml
+COPY --chown=wazuh:wazuh manager/local/u3_rules.xml /var/ossec/etc/rules/u3_rules.xml
 # Lab credentials (see INFRAESTRUCTURA.md section 10).
 ENV INDEXER_URL=https://192.168.30.6:9200 \
     INDEXER_USERNAME=admin \

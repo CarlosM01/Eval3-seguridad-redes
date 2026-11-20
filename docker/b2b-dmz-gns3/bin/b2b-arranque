@@ -1,0 +1,14 @@
+#!/bin/bash
+# Entry point: first boot creates an RSA-3072 key and CSR (profile "socio" of PKI-CA)
+# and a temporary self-signed certificate; replace /etc/b2b/b2b.pem with the PKI-CA one.
+cd /etc/b2b
+if [ ! -f b2b.key ]; then
+  openssl req -new -newkey rsa:3072 -nodes -keyout b2b.key -out b2b.csr \
+    -subj "/O=Empresa Logistica/CN=as2.empresa.local" 2>/dev/null
+  openssl x509 -req -in b2b.csr -signkey b2b.key -days 30 -out b2b.pem 2>/dev/null
+  chmod 600 b2b.key
+  echo "B2B-DMZ: key and CSR created in /etc/b2b (temporary self-signed certificate)"
+fi
+mkdir -p /run/nginx
+nginx && echo "B2B-DMZ: nginx listening on 443 (HTTPS) and 80 (redirect)"
+exec /bin/sh

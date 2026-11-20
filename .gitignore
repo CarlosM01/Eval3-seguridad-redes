@@ -29,3 +29,6 @@ docker/wazuh-gns3/certs/
 .vscode/
 .idea/
 .DS_Store
+
+# U3 summative backups: OPNsense XML holds private keys (<prv>); keep them out of Git (attach to the report instead)
+configs/backup-u3-sumativa/*.xml

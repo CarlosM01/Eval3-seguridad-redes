@@ -1,0 +1,7 @@
+<!-- U3 summative: Suricata EVE events that OPNsense (FW-ZONA-CENTRO) sends over syslog
+     ("suricata[pid]: {json}"). The built-in json decoder only matches logs without a syslog header. -->
+<decoder name="opnsense-suricata-eve">
+  <program_name>^suricata$</program_name>
+  <prematch>^{</prematch>
+  <plugin_decoder>JSON_Decoder</plugin_decoder>
+</decoder>
