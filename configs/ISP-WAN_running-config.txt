@@ -1,8 +1,8 @@
 Building configuration...
 
-Current configuration : 4391 bytes
+Current configuration : 4558 bytes
 !
-! Last configuration change at 21:38:58 UTC Fri Nov 20 2026
+! Last configuration change at 22:50:57 UTC Fri Nov 20 2026
 !
 version 15.9
 service timestamps debug datetime msec
@@ -34,10 +34,16 @@ no ip icmp rate-limit unreachable
 !
 !
 ip dhcp excluded-address 100.64.20.1 100.64.20.9
+ip dhcp excluded-address 192.0.2.1 192.0.2.19
 !
 ip dhcp pool RED_MOVIL
  network 100.64.20.0 255.255.255.0
  default-router 100.64.20.1 
+ dns-server 1.1.1.1 8.8.8.8 
+!
+ip dhcp pool INTERNET_EXTERNA
+ network 192.0.2.0 255.255.255.0
+ default-router 192.0.2.1 
  dns-server 1.1.1.1 8.8.8.8 
 !
 !
