@@ -14,6 +14,9 @@ project-files/
 # --- PDFs (docs/informe.pdf stays local)
 *.pdf
 
+# --- Word reports: team working copies shared over WhatsApp; their facts live in docs/*.md
+*.docx
+
 # --- Private keys and secrets: never publish (regenerate them locally)
 *.key
 *-key.pem
