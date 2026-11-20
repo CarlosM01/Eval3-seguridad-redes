@@ -41,11 +41,11 @@ Hay un solo laboratorio, en el servidor GNS3 del dueño. Todos trabajan sobre lo
 
 | Dato | Valor |
 |---|---|
-| Servidor | `10.82.151.125:3080`, en la red ZeroTier del curso |
+| Servidor | `10.163.179.125:3080`, en la red ZeroTier del curso |
 | Cliente | GNS3 **2.2** (misma versión menor que el servidor) |
 | Proyecto | `eval1` |
-| Consolas | `telnet 10.82.151.125 <puerto>`; tabla de puertos en [HOJA_TRAMPA.md](HOJA_TRAMPA.md) |
-| Interfaz gráfica de administración | VNC `10.82.151.125:5902` (`WEBTERM-ADMIN`) |
+| Consolas | `telnet 10.163.179.125 <puerto>`; tabla de puertos en [HOJA_TRAMPA.md](HOJA_TRAMPA.md) |
+| Interfaz gráfica de administración | VNC `10.163.179.125:5902` (`WEBTERM-ADMIN`) |
 
 **Al arrancar:** los nodos no arrancan solos. Primero `CiscoSW-1`, `ISP-WAN`, `FW-ZONA-CENTRO` y `FW-VEHICULO-01`; unos 2 minutos después, el resto. `Kali` y `SoporteTI` quedan apagados salvo que la tarea los use.
 

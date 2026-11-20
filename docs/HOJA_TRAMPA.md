@@ -6,36 +6,36 @@ Comandos útiles por nodo. Detalle en [INFRAESTRUCTURA.md](linea-base/INFRAESTRU
 
 ## Acceso desde el host
 
-Desde el 2026-11-13 el servidor GNS3 escucha en la red ZeroTier del curso (`10.82.151.125:3080`) para que los compañeros se conecten con su cliente. Las consolas también escuchan en esa IP, no en `127.0.0.1`. Al abrir el proyecto los nodos **no** arrancan solos (`auto_start = False`): arrancar primero `CiscoSW-1`, `ISP-WAN` y los dos firewalls, y unos 2 minutos después el resto (`Kali` y `SoporteTI` quedan apagados).
+Con la IP actualizada por el propietario el 2026-11-18, el servidor GNS3 escucha en la red ZeroTier del curso (`10.163.179.125:3080`) para que los compañeros se conecten con su cliente. Las consolas también escuchan en esa IP, no en `127.0.0.1`. Al abrir el proyecto los nodos **no** arrancan solos (`auto_start = False`): arrancar primero `CiscoSW-1`, `ISP-WAN` y los dos firewalls, y unos 2 minutos después el resto (`Kali` y `SoporteTI` quedan apagados).
 
-| Nodo | Consola | IP |
-|---|---|---|
-| ISP-WAN | `telnet 10.82.151.125 5015` | 203.0.113.1, 100.64.20.1 |
-| FW-ZONA-CENTRO | `telnet 10.82.151.125 5017` | 203.0.113.2, 192.168.{10,20,30}.1, 10.99.0.1 |
-| FW-VEHICULO-01 | `telnet 10.82.151.125 5023` | 100.64.20.x (DHCP), 172.16.50.1 |
-| TABLET-CONDUCTOR | `telnet 10.82.151.125 5025` | 172.16.50.10 |
-| WEBTERM-VEHICULO | VNC 5901 | 172.16.50.20 |
-| WEBTERM-ADMIN | VNC 5902 | 10.99.0.20 (VLAN 99) |
-| CiscoSW-1 | `telnet 10.82.151.125 5011` | 10.99.0.2 |
-| alpine-1 | `telnet 10.82.151.125 5021` | VLAN 10, DHCP |
-| odoo-1 | `telnet 10.82.151.125 5027` | 192.168.20.5 (VLAN 20) |
-| postgres-1 | `telnet 10.82.151.125 5018` | 192.168.20.4 |
-| WAZUH-MANAGER | `telnet 10.82.151.125 5031` | 192.168.30.5 |
-| WAZUH-INDEXER | `telnet 10.82.151.125 5034` | 192.168.30.6 |
-| WAZUH-DASHBOARD | `telnet 10.82.151.125 5036` | 192.168.30.7 (HTTPS 5601) |
-| SIEM (VM antigua) | spice 5012 | apagada, sin enlaces |
-| PKI-CA | `telnet 10.82.151.125 5008` | 10.99.0.10 (VLAN 99): CRL y CA por HTTP 80, OCSP 2560 |
-| CA-RAIZ | `telnet 10.82.151.125 5010` | sin red (CA raíz fuera de línea) |
-| SoporteTI | spice 5006 | VLAN 99 |
-| CiscoRTT-1 | `telnet 10.82.151.125 5009` | apagado, sin enlaces |
+| Nodo              | Consola                     | IP                                                    |
+| ----------------- | --------------------------- | ----------------------------------------------------- |
+| ISP-WAN           | `telnet 10.163.179.125 5015` | 203.0.113.1, 100.64.20.1                              |
+| FW-ZONA-CENTRO    | `telnet 10.163.179.125 5017` | 203.0.113.2, 192.168.{10,20,30}.1, 10.99.0.1          |
+| FW-VEHICULO-01    | `telnet 10.163.179.125 5023` | 100.64.20.x (DHCP), 172.16.50.1                       |
+| TABLET-CONDUCTOR  | `telnet 10.163.179.125 5025` | 172.16.50.10                                          |
+| WEBTERM-VEHICULO  | VNC 5901                    | 172.16.50.20                                          |
+| WEBTERM-ADMIN     | VNC 5902                    | 10.99.0.20 (VLAN 99)                                  |
+| CiscoSW-1         | `telnet 10.163.179.125 5011` | 10.99.0.2                                             |
+| alpine-1          | `telnet 10.163.179.125 5021` | VLAN 10, DHCP                                         |
+| odoo-1            | `telnet 10.163.179.125 5027` | 192.168.20.5 (VLAN 20)                                |
+| postgres-1        | `telnet 10.163.179.125 5018` | 192.168.20.4                                          |
+| WAZUH-MANAGER     | `telnet 10.163.179.125 5031` | 192.168.30.5                                          |
+| WAZUH-INDEXER     | `telnet 10.163.179.125 5034` | 192.168.30.6                                          |
+| WAZUH-DASHBOARD   | `telnet 10.163.179.125 5036` | 192.168.30.7 (HTTPS 5601)                             |
+| SIEM (VM antigua) | spice 5012                  | apagada, sin enlaces                                  |
+| PKI-CA            | `telnet 10.163.179.125 5008` | 10.99.0.10 (VLAN 99): CRL y CA por HTTP 80, OCSP 2560 |
+| CA-RAIZ           | `telnet 10.163.179.125 5010` | sin red (CA raíz fuera de línea)                      |
+| SoporteTI         | spice 5006                  | VLAN 99                                               |
+| CiscoRTT-1        | `telnet 10.163.179.125 5009` | apagado, sin enlaces                                  |
 
 ```bash
 # Shell de un contenedor Docker
 docker exec -it GNS3.<nodo>.54ea9572-79a3-48cc-9bb4-8c652368f315 sh
 
 # Consola gráfica (VNC), independiente de la terminal
-setsid remote-viewer vnc://10.82.151.125:5901 &   # WEBTERM-VEHICULO
-setsid remote-viewer vnc://10.82.151.125:5902 &   # WEBTERM-ADMIN
+setsid remote-viewer vnc://10.163.179.125:5901 &   # WEBTERM-VEHICULO
+setsid remote-viewer vnc://10.163.179.125:5902 &   # WEBTERM-ADMIN
 ```
 
 Si el servidor de GNS3 se reinicia con los nodos encendidos, sus procesos QEMU y Xtigervnc quedan huérfanos: bloquean los discos ("Could not rebase the image") y los puertos VNC (GNS3 asigna otros). Guardar la config de los Cisco (`write memory`), terminar esos procesos y volver a arrancar. Si `odoo-1` arranca antes que el switch, se cierra porque no llega a `postgres-1`: reiniciarlo.
@@ -113,10 +113,10 @@ Si la consola no abre con doble clic en GNS3: Preferences → General → VNC �
 
 ## WEBTERM-ADMIN (Firefox por VNC, VLAN 99)
 
-| URL | Qué es |
-|---|---|
+| URL                         | Qué es                              |
+| --------------------------- | ----------------------------------- |
 | `https://192.168.30.7:5601` | Dashboard de Wazuh, usuario `admin` |
-| `https://10.99.0.1` | OPNsense de la sede |
+| `https://10.99.0.1`         | OPNsense de la sede                 |
 
 La primera vez Firefox avisa del certificado autofirmado: *Advanced* → *Proceed*.
 

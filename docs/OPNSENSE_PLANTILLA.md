@@ -68,7 +68,7 @@ printf 'boot_multicons="YES"\nconsole="vidconsole,comconsole"\ncomconsole_speed=
 reboot
 ```
 
-Para escribir en la VGA sin cliente VNC se usa `sendkey` en el monitor de QEMU. GNS3 abre el monitor en un puerto TCP local, visible en la línea `-monitor tcp:127.0.0.1:<puerto>` del proceso `qemu-system`. Después del reinicio, `telnet 10.82.151.125 <consola>` muestra el `login:`.
+Para escribir en la VGA sin cliente VNC se usa `sendkey` en el monitor de QEMU. GNS3 abre el monitor en un puerto TCP local, visible en la línea `-monitor tcp:127.0.0.1:<puerto>` del proceso `qemu-system`. Después del reinicio, `telnet 10.163.179.125 <consola>` muestra el `login:`.
 
 El resto de la configuración de `FW-ZONA-CENTRO` y `FW-VEHICULO-01` está en [VPN_VEHICULO.md §6](VPN_VEHICULO.md).
 
