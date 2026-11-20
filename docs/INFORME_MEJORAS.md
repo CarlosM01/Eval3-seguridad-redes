@@ -6,7 +6,7 @@ Este documento registra, a medida que avanza el trabajo, cada mejora de segurida
 - **El "antes":** [linea-base/INFRAESTRUCTURA.md](linea-base/INFRAESTRUCTURA.md), congelado a propósito como línea base.
 - **El plan completo y la bitácora técnica (en inglés):** [../odd/tasks/informe-hardening.md](../odd/tasks/informe-hardening.md).
 
-> Última actualización: 2026-11-20, evaluación sumativa U3 aplicada en el laboratorio: DMZ B2B, VPN IPsec con certificados, OpenVPN por perfiles, Suricata IPS, eventos en Wazuh, respaldos y capturas ([U3_SUMATIVA.md](U3_SUMATIVA.md)). Acceso GNS3 por `10.163.179.125:3080` comprobado.
+> Última actualización: 2026-11-20, evaluación sumativa U3 aplicada en el laboratorio: DMZ B2B, VPN IPsec con certificados, OpenVPN por perfiles, Suricata IPS, eventos en Wazuh, respaldos y capturas ([U3_SUMATIVA.md](U3_SUMATIVA.md)). Después: lienzo GNS3 ordenado con zonas y puntos de control, `Kali` conectado, nombres de nodos simplificados y capturas pegadas en el Word (§3.7). Acceso GNS3 por `10.163.179.125:3080` comprobado.
 
 ---
 
@@ -51,6 +51,10 @@ Una fila por cambio ya aplicado en el laboratorio.
 | Wazuh | Solo alertaba bloqueos repetidos (87702) | Decodificador del EVE de Suricata por syslog y reglas locales 100200–100212: un evento visible por cada E-01 a E-04 | Informe U3 §5.2; resuelve L13 | U3 sumativa (2026-11-20) |
 | Gestión del switch | SVI en VLAN 10/20/30: el switch respondía SSH desde la VLAN 10 | Solo Vlan99; ACL `MGMT_VTY` en las VTY (10.99.0.0/25) | POL-05, F-04 (administración solo desde VLAN 99) | U3 sumativa (2026-11-20) |
 | Respaldos | Copias internas del 13-11 | XML de los dos firewalls y running-config del switch del 2026-11-20, fuera de Git | Informe U3 §5.3 | U3 sumativa (2026-11-20) |
+| Lienzo GNS3 | Recuadros grises sin leyenda, íconos genéricos, notas con contraseñas y comandos, nodos fuera de cuadrícula | Zonas por color (Internet no confiable, operador, vehículo, DMZ, LAN por VLAN, CA fuera de línea), íconos por función, IP y servicio bajo cada nodo, insignias y leyenda PC-01 a PC-04, cuadrícula de 25 px; sin credenciales en el lienzo | Informe U3 §2.1, Figura 1 (G.1 y G.4: esquema con zonas y puntos de control) | Ajuste de presentación (2026-11-20) |
+| Atacante externo `Kali` | En el lienzo, sin enlace ni IP | Conectado por el switch nuevo `SW-INTERNET` a `ISP-WAN` Gi0/3; recibe 192.0.2.20 por DHCP (pool `INTERNET_EXTERNA` en `ISP-WAN`) | Informe U3 §4.3 y E-03 (Kali como atacante externo) | Ajuste de presentación (2026-11-20) |
+| Nombres de nodos | `CiscoSW-1`, `NAT1`, `odoo-1`, `postgres-1`, `alpine-1` (numeración automática de GNS3) | `SW-ZONA-CENTRO`, `INTERNET`, `odoo`, `postgres`, `alpine` | Claridad del esquema; no añade requisitos | Ajuste de presentación (2026-11-20) |
+| Informe Word de la sumativa | Diez recuadros "[PEGAR CAPTURA / EVIDENCIA AQUÍ]" | Figuras 1–10 con las 34 capturas, subtítulos (a), (b)… y nota de fuente; nombres de nodos actualizados en el texto | Informe U3, Figuras 1–10 | Ajuste de presentación (2026-11-20) |
 
 ## 3. Detalle de cada mejora
 
@@ -210,6 +214,31 @@ docker exec GNS3.PKI-CA.54ea9572-79a3-48cc-9bb4-8c652368f315 sh -c 'cd /srv/ca/e
 
 **Observaciones:** el laboratorio vivo no tenía los cambios del 13-11 (L15), así que se rehicieron reglas y PKI desde cero. Hay siete diferencias entre el texto del Word y lo implementado (ECP-521, cliente en contenedor y no Kali, OpenVPN solo con certificado, respaldos sin cifrar, puertos extra de R-04, reglas extra de la WAN, horas reales de los eventos); están en [U3_SUMATIVA.md §7](U3_SUMATIVA.md) para corregir el informe.
 
+### 3.7 Lienzo GNS3 ordenado, Kali conectado y nombres simplificados (2026-11-20)
+
+**Qué pide:** la Figura 1 del informe sumativo debe mostrar el esquema intervenido con las zonas y los puntos de control marcados; el profesor recomendó que ningún nodo quede suelto en el lienzo (Kali parecía olvidado).
+
+**Qué se hizo:** todo por la API de GNS3, sin editar `eval1.gns3` a mano. Detalle del lienzo en [INFRAESTRUCTURA_ACTUAL.md §5 y §6](INFRAESTRUCTURA_ACTUAL.md).
+
+| Elemento | Detalle |
+|---|---|
+| Zonas y notas | Recuadros de color por zona con red y puerta de enlace; IP y servicio de cada nodo; leyenda y las insignias PC-01 a PC-04 junto a `FW-ZONA-CENTRO`; se quitaron del lienzo la contraseña de Wazuh y los comandos VNC (siguen en [HOJA_TRAMPA.md](HOJA_TRAMPA.md)) |
+| Íconos | Set *affinity circle* de GNS3: cortafuegos, switches, nube, calavera (`Kali`), huella (PKI), servidor y base de datos (WMS), lupa, almacenamiento y gráfico (Wazuh); el color sigue la zona |
+| Cuadrícula | Nodos centrados en una cuadrícula de 25 px, *snap to grid* activo; rótulos de la LAN bajo el ícono para que los enlaces no los crucen |
+| `Kali` | Switch nuevo `SW-INTERNET` (e0 → `ISP-WAN` Gi0/3, e1 → `REMOTO-SUPERVISOR`, e2 → `Kali`); en `ISP-WAN`: `ip dhcp excluded-address 192.0.2.1 192.0.2.19` y `ip dhcp pool INTERNET_EXTERNA`, guardado con `write memory` ([running-config](../configs/ISP-WAN_running-config.txt)) |
+| Nombres | `CiscoSW-1` → `SW-ZONA-CENTRO`, `NAT1` → `INTERNET`, `odoo-1` → `odoo`, `postgres-1` → `postgres`, `alpine-1` → `alpine`; documentos vigentes actualizados, los históricos conservan los nombres antiguos |
+| Informe Word | Figuras 1–10 con las capturas de [img/u3-sumativa/](img/u3-sumativa/); la Figura 1 es el lienzo nuevo |
+
+**Cómo se comprobó:**
+
+- [x] `Kali` arrancó y obtuvo 192.0.2.20: `show ip dhcp binding` en `ISP-WAN` muestra la MAC `0c61.9901.0000`.
+- [x] `REMOTO-SUPERVISOR` detrás de `SW-INTERNET`: ping a 192.0.2.1 sin pérdida; túnel OpenVPN arriba (10.8.0.2), WMS 8069 alcanzable (P-05) y `https://203.0.113.2` → `HTTP/1.1 200 OK` (P-06).
+- [x] Tras renombrar (GNS3 recrea los contenedores): `alpine` recupera 192.168.10.230 por DHCP, llega a 192.168.20.5:8069 y 5432 sigue bloqueado (P-01); la base de `postgres` conserva sus 40 MB.
+- [x] El Word validado contra el esquema OOXML: 10 figuras, 34 imágenes, ningún marcador "[PEGAR CAPTURA" restante.
+- [ ] Revisión visual del Word en Microsoft Word o LibreOffice (en este equipo no hay LibreOffice para convertirlo a PDF).
+
+**Observaciones:** las pruebas de la sumativa (E-03, P-05, P-06) se hicieron desde `REMOTO-SUPERVISOR`, no desde `Kali`; `Kali` solo tiene consola SPICE. El texto del Word que nombra a Kali como atacante (E-03) sigue siendo una de las siete diferencias de [U3_SUMATIVA.md §7](U3_SUMATIVA.md).
+
 ## 4. Limitaciones del entorno virtualizado y desviaciones del informe
 
 El laboratorio corre completo en un solo equipo con GNS3, contenedores Docker y máquinas virtuales. Algunas exigencias del informe no se pueden reproducir tal cual. Cada fila dice qué pide el informe, qué hace el laboratorio y por qué.
@@ -224,7 +253,7 @@ El laboratorio corre completo en un solo equipo con GNS3, contenedores Docker y 
 | L2 | CA raíz fuera de línea | Contenedor sin interfaces de red en el mismo anfitrión | Está aislada de la red del laboratorio, pero comparte el equipo físico. Los archivos se trasladan por el anfitrión en vez de por un medio extraíble en una ceremonia de firma | Confirmada (T1.1) |
 | L3 | Switch multicapa (L3) | Switch L2 (IOSv-L2) y enrutamiento entre VLAN en el firewall | El enrutamiento entre VLAN lo hace el firewall. El resultado de seguridad es igual o mejor, porque todo el tráfico entre VLAN pasa por el firewall | Confirmada (supuesto A2) |
 | L4 | Teléfono o tableta del conductor con VPN propia | Router OPNsense del vehículo (`FW-VEHICULO-01`) con un túnel sitio a sitio | GNS3 no emula bien un teléfono con cliente IPsec. El certificado identifica al router del vehículo | Confirmada (supuesto A1) |
-| L5 | Internet, socios y usuarios remotos reales | Segmento simulado 192.0.2.0/24 (direcciones de documentación, RFC 5737) en `ISP-WAN` Gi0/3, con un solo contenedor (`REMOTO-SUPERVISOR`) que hace de supervisor, socio y atacante | No se exponen servicios a Internet real | Confirmada (U3 sumativa) |
+| L5 | Internet, socios y usuarios remotos reales | Segmento simulado 192.0.2.0/24 (direcciones de documentación, RFC 5737) en `ISP-WAN` Gi0/3, con el contenedor `REMOTO-SUPERVISOR` como supervisor, socio y atacante de las pruebas, y `Kali` (192.0.2.20, DHCP) conectado al mismo segmento desde el 2026-11-20 | No se exponen servicios a Internet real. `Kali` solo tiene consola SPICE, por eso las pruebas automatizadas usan el contenedor | Confirmada (U3 sumativa) |
 | L6 | Recursos de un equipo productivo | El firewall central pasó de 2 a 4 GB de RAM para Suricata | El anfitrión comparte memoria entre unos 20 nodos. Con 18 nodos encendidos el anfitrión usó 19 de 31 GB (2026-11-20) | Confirmada (U3 sumativa) |
 | L7 | Credenciales robustas | Contraseñas del laboratorio en texto plano (`test123`) en la documentación | Es un laboratorio de estudio; se documentan a propósito para poder evaluarlo. No se reutilizan en entornos reales | Confirmada |
 | L8 | Respondedor OCSP de producción, en el concentrador VPN y la pasarela AS2 | Un único respondedor central (`openssl ocsp`, de un proceso) detrás de lighttpd, en `PKI-CA` | `openssl ocsp` está pensado para pruebas. El proxy lo protege de conexiones colgadas, pero atiende las consultas de a una. Su puerto interno 2561 queda accesible desde la VLAN 99, el segmento de confianza. Para el volumen del laboratorio alcanza | Confirmada (T1.2) |
@@ -232,7 +261,8 @@ El laboratorio corre completo en un solo equipo con GNS3, contenedores Docker y 
 | L12 | Horario de despacho en hora local | El horario se escribe en UTC (10:00–23:00), porque el firewall usa UTC | Las horas en UTC deben ajustarse a mano cuando Chile cambia entre UTC−3 y UTC−4. Los registros del firewall quedan en UTC | Confirmada (U3 L2) |
 | L13 | El SIEM recibe los eventos relevantes del perímetro | Wazuh recibe todo el `filterlog`, pero sus reglas incluidas solo alertan sobre bloqueos repetidos desde un mismo origen (regla 87702) | Un acceso permitido o un bloqueo aislado quedan en el log del firewall, pero no aparecen como alerta en el dashboard. **Resuelta en parte el 2026-11-20:** reglas locales 100210–100212 alertan los bloqueos de E-01, E-02 y E-04; los accesos permitidos siguen sin alerta | Confirmada (U3 L1); resuelta en parte (U3 sumativa) |
 | L15 | Cambios persistentes en el laboratorio compartido | El 2026-11-20 el laboratorio vivo no tenía las reglas U3 L1–L2 ni la PKI del 13-11: los volúmenes de `PKI-CA` y `CA-RAIZ` estaban vacíos desde el 17-11 22:09 y `opt4` "DMZ" estaba a medio crear | Probablemente el proyecto se reabrió o se reconstruyó el 17-11 desde otra copia. Se rehízo todo y la PKI tiene huellas nuevas. Los scripts de `configs/opnsense/` permiten repetir la configuración | Confirmada (U3 sumativa) |
-| L16 | Un solo archivo de topología | GNS3 tiene abierto `eval1` desde `~/GNS3/projects/e96f2260-…/eval1.gns3`; el `eval1.gns3` del repositorio es del 13-11 | El repositorio no refleja los nodos `B2B-DMZ` y `REMOTO-SUPERVISOR` hasta que se copie ese archivo o se abra el proyecto desde el repositorio | Confirmada (U3 sumativa) |
+| L16 | Un solo archivo de topología | GNS3 tiene abierto `eval1` desde `~/GNS3/projects/e96f2260-…/eval1.gns3`, no desde el repositorio | El repositorio solo refleja el laboratorio cuando se copia ese archivo; se copió el 2026-11-20 tras ordenar el lienzo | Confirmada (U3 sumativa) |
+| L17 | Renombrar nodos sin efectos | En GNS3, renombrar un nodo Docker destruye y recrea su contenedor | Solo sobrevive lo que está en volúmenes persistentes (`/etc/network`, `/var/lib/postgresql`, `/var/lib/odoo`); un paquete instalado a mano en el contenedor se perdería. Los nombres de contenedor cambian (`GNS3.odoo.<id>`) | Confirmada (2026-11-20) |
 
 ### 4.2 El servidor GNS3 compartido
 
@@ -266,7 +296,7 @@ Estos controles del informe pertenecen a la aplicación, a la nube o a los dispo
 
 ## 5. Próximo paso
 
-Para la entrega sumativa: corregir en el Word las siete diferencias de [U3_SUMATIVA.md §7](U3_SUMATIVA.md), pegar las capturas en las Figuras 1–10 (la Figura 1 necesita las etiquetas de zonas y puntos de control) y adjuntar `config-FW-ZONA-CENTRO.empresa.local-20261120.xml`. Copiar al repositorio el `eval1.gns3` que tiene abierto GNS3 (L16).
+Para la entrega sumativa: revisar el Word en Microsoft Word (las Figuras 1–10 ya tienen sus capturas), corregir las siete diferencias de [U3_SUMATIVA.md §7](U3_SUMATIVA.md) y adjuntar `config-FW-ZONA-CENTRO.empresa.local-20261120.xml`.
 
 Validar los scripts de [CONTROL_GNS3.md](CONTROL_GNS3.md) en una sesión real (`labctl.py up`/`down`); el acceso a `10.163.179.125:3080` y a las consolas ya se comprobó el 2026-11-20.
 

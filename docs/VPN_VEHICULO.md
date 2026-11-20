@@ -2,7 +2,7 @@
 
 Extensión del laboratorio `eval1`. Un conductor en ruta tiene una red propia en el vehículo, que sale a Internet por una red móvil con CGNAT. Esa red se conecta con la VLAN 10 de la sede central, y solo con el host de Odoo de la VLAN 20, mediante un túnel IPsec que cruza la WAN.
 
-**Estado verificado (2026-11-11):** túnel establecido; ping en ambos sentidos entre `TABLET-CONDUCTOR` (172.16.50.10) y `alpine-1` (VLAN 10); Odoo de la sede abierto en Firefox desde `WEBTERM-VEHICULO` (172.16.50.20). Después, `odoo-1` se movió a la VLAN 20 (192.168.20.5) y se agregó al túnel un Child SA solo para ese host (§3.4 y §5).
+**Estado verificado (2026-11-11):** túnel establecido; ping en ambos sentidos entre `TABLET-CONDUCTOR` (172.16.50.10) y `alpine` (VLAN 10); Odoo de la sede abierto en Firefox desde `WEBTERM-VEHICULO` (172.16.50.20). Después, `odoo` se movió a la VLAN 20 (192.168.20.5) y se agregó al túnel un Child SA solo para ese host (§3.4 y §5).
 
 ---
 
@@ -11,7 +11,7 @@ Extensión del laboratorio `eval1`. Un conductor en ruta tiene una red propia en
 ```
                                    Internet
                                       │
-                               NAT1 (virbr0)
+                               INTERNET (virbr0)
                                       │ Gi0/0 (DHCP 192.168.122.x)
                              ┌────────┴────────┐
                              │     ISP-WAN     │  IOSv: "operador"
@@ -51,9 +51,9 @@ Extensión del laboratorio `eval1`. Un conductor en ruta tiene una red propia en
 
 | Extremo A | Puerto A | Extremo B | Puerto B |
 |---|---|---|---|
-| NAT1 | nat0 | ISP-WAN | Gi0/0 |
+| INTERNET | nat0 | ISP-WAN | Gi0/0 |
 | ISP-WAN | Gi0/1 | FW-ZONA-CENTRO | vtnet1 |
-| FW-ZONA-CENTRO | vtnet0 | CiscoSW-1 | Gi0/0 (trunk) |
+| FW-ZONA-CENTRO | vtnet0 | SW-ZONA-CENTRO | Gi0/0 (trunk) |
 | ISP-WAN | Gi0/2 | FW-VEHICULO-01 | vtnet1 |
 | FW-VEHICULO-01 | vtnet0 | SW-VEHICULO | Ethernet0 |
 | TABLET-CONDUCTOR | eth0 | SW-VEHICULO | Ethernet1 |
@@ -68,7 +68,7 @@ Extensión del laboratorio `eval1`. Un conductor en ruta tiene una red propia en
 | 198.51.100.10 | IP pública compartida del CGNAT: así ve la sede al vehículo |
 | 172.16.50.0/24 | LAN del vehículo |
 | 192.168.10.0/24 | VLAN 10 de la sede, el destino de la VPN |
-| 192.168.20.5/32 | `odoo-1` (VLAN 20), el único host de la VLAN 20 dentro de la VPN |
+| 192.168.20.5/32 | `odoo` (VLAN 20), el único host de la VLAN 20 dentro de la VPN |
 
 Los rangos 203.0.113.0/24 y 198.51.100.0/24 son de documentación (RFC 5737). En OPNsense cuentan como *bogons*, así que en las WAN de ambos firewalls están desactivadas las opciones **Block private networks** y **Block bogon networks**.
 
@@ -78,7 +78,7 @@ Los rangos 203.0.113.0/24 y 198.51.100.0/24 son de documentación (RFC 5737). En
 
 Configuración completa: [configs/ISP-WAN_running-config.txt](../configs/ISP-WAN_running-config.txt).
 
-- Gi0/0 obtiene IP por DHCP desde NAT1 y es la salida a Internet.
+- Gi0/0 obtiene IP por DHCP desde INTERNET y es la salida a Internet.
 - Pool DHCP `RED_MOVIL` para el vehículo (100.64.20.10–254).
 - NAT con NVI (`ip nat enable` en las tres interfaces), porque se traduce entre interfaces "internas":
 
@@ -145,7 +145,7 @@ Desde el 2026-11-13 (U3, [U3_SEGURIDAD_PERIMETRAL.md](U3_SEGURIDAD_PERIMETRAL.md
 | 320 | WAN | cualquiera → IP WAN | ESP | VPN |
 | 9000 | Todas (VLAN 10, 20, 30, 99, IPsec y WAN) | cualquiera → cualquiera | todos | **Bloquear con registro** (U3: R-99), desde el 2026-11-13 |
 
-- **Criterio 1** (aislamiento entre VLANs): lo cumple el bloqueo por defecto. La antigua regla 25 (`odoo-1` en la VLAN 10 → `postgres-1` 5432) se quitó el 2026-11-11: los dos están ahora en la VLAN 20 y no pasan por el firewall. El número 25 lo usa ahora la regla VLAN 10 → Odoo 8069.
+- **Criterio 1** (aislamiento entre VLANs): lo cumple el bloqueo por defecto. La antigua regla 25 (`odoo` en la VLAN 10 → `postgres` 5432) se quitó el 2026-11-11: los dos están ahora en la VLAN 20 y no pasan por el firewall. El número 25 lo usa ahora la regla VLAN 10 → Odoo 8069.
 - **Criterio 5** (solo la VLAN 99 entra por SSH): SSH escucha solo en MGMT_TI, y la regla *anti-lockout* de OPNsense solo existe en esa interfaz.
 - El anti-spoofing lo cumple que todas las reglas usan como origen la red de su propia interfaz.
 - El alias `SIEM_WAZUH` contiene 192.168.30.5, .6 y .7 desde que Wazuh pasó a Docker (2026-11-11, [configs/opnsense/siem-alias.php](../configs/opnsense/siem-alias.php) y [WAZUH_DOCKER.md](WAZUH_DOCKER.md)). Antes solo tenía 192.168.30.5.
@@ -160,7 +160,7 @@ Desde el 2026-11-13 (U3, [U3_SEGURIDAD_PERIMETRAL.md](U3_SEGURIDAD_PERIMETRAL.md
 | Autenticación local | PSK, ID `fw-centro.empresa.local` |
 | Autenticación remota | PSK, ID `vehiculo-01.empresa.local` |
 | Child SA | 192.168.10.0/24 ↔ 172.16.50.0/24, `start_action = none` (solo responde) |
-| Child SA | 192.168.20.5/32 ↔ 172.16.50.0/24, `start_action = none`: solo `odoo-1`; el resto de la VLAN 20 queda fuera del túnel |
+| Child SA | 192.168.20.5/32 ↔ 172.16.50.0/24, `start_action = none`: solo `odoo`; el resto de la VLAN 20 queda fuera del túnel |
 | DPD | 30 s, acción `clear` |
 
 ![FW-ZONA-CENTRO: túnel visto desde la sede](img/vpn-vehiculo/04-fw-zona-centro-tunel.png)
@@ -178,7 +178,7 @@ La sede ve al vehículo como `198.51.100.10[4500]`: la IP del CGNAT, no la real 
 | Reglas | LAN → cualquiera (la regla por defecto); IPsec: VLAN 10 → LAN |
 | IPsec | IKEv2 hacia 203.0.113.2, ID local `vehiculo-01.empresa.local`, ID remoto `fw-centro.empresa.local` |
 | Child SA | 172.16.50.0/24 ↔ 192.168.10.0/24, `start_action = trap\|start`, `dpd_action = start`, `close_action = start` |
-| Child SA | 172.16.50.0/24 ↔ 192.168.20.5/32 (`odoo-1`), mismas opciones |
+| Child SA | 172.16.50.0/24 ↔ 192.168.20.5/32 (`odoo`), mismas opciones |
 
 Con `trap|start`, el vehículo levanta el túnel al arrancar y lo vuelve a levantar si cae o si aparece tráfico hacia la VLAN 10. Así se recupera solo cuando el operador le cambia la IP.
 
@@ -192,22 +192,22 @@ Con `trap|start`, el vehículo levanta el túnel al arrancar y lo vuelve a levan
 
 | Prueba | Resultado |
 |---|---|
-| `alpine-1` (VLAN 10) obtiene IP por DHCP de `FW-ZONA-CENTRO` | ✅ 192.168.10.230, DNS 1.1.1.1 y 8.8.8.8 |
-| `alpine-1` → Internet (`ping 1.1.1.1`, `nslookup`) | ✅ (criterio 4) |
-| `TABLET-CONDUCTOR` → `alpine-1` por el túnel | ✅ 0 % de pérdida, ~8 ms |
-| `alpine-1` → `TABLET-CONDUCTOR` por el túnel | ✅ 0 % de pérdida |
+| `alpine` (VLAN 10) obtiene IP por DHCP de `FW-ZONA-CENTRO` | ✅ 192.168.10.230, DNS 1.1.1.1 y 8.8.8.8 |
+| `alpine` → Internet (`ping 1.1.1.1`, `nslookup`) | ✅ (criterio 4) |
+| `TABLET-CONDUCTOR` → `alpine` por el túnel | ✅ 0 % de pérdida, ~8 ms |
+| `alpine` → `TABLET-CONDUCTOR` por el túnel | ✅ 0 % de pérdida |
 | `TABLET-CONDUCTOR` → 192.168.20.1 (fuera del túnel) | ✅ bloqueado (100 % de pérdida) |
 | ISP-WAN: traducción del IKE del vehículo | ✅ `198.51.100.10:500 ← 100.64.20.10:500 → 203.0.113.2:500` |
-| `WEBTERM-VEHICULO` → `odoo-1` (entonces 192.168.10.4) por el túnel | ✅ ping 0 % de pérdida (~4 ms); `http://192.168.10.4:8069` responde 200 y Firefox muestra Odoo |
+| `WEBTERM-VEHICULO` → `odoo` (entonces 192.168.10.4) por el túnel | ✅ ping 0 % de pérdida (~4 ms); `http://192.168.10.4:8069` responde 200 y Firefox muestra Odoo |
 | **Odoo en la VLAN 20** (2026-11-11): `TABLET-CONDUCTOR` → `http://192.168.20.5:8069/web/login` | ✅ `303 SEE OTHER` (redirige al asistente de base de datos) |
-| `TABLET-CONDUCTOR` → 192.168.20.4:5432 (`postgres-1`) | ✅ bloqueado: no hay Child SA para ese host |
+| `TABLET-CONDUCTOR` → 192.168.20.4:5432 (`postgres`) | ✅ bloqueado: no hay Child SA para ese host |
 | `TABLET-CONDUCTOR` → ping 192.168.20.5 | ✅ bloqueado: la regla 210 solo deja pasar 8069 |
-| `alpine-1` (VLAN 10) → 192.168.20.5:8069 | ✅ `303 SEE OTHER` (regla 25) |
-| `alpine-1` → ping 192.168.20.5, 192.168.20.5:22, 192.168.20.4:5432 | ✅ bloqueados |
-| `odoo-1` → `postgres-1` | ✅ conecta; PostgreSQL ve el cliente 192.168.20.5 |
+| `alpine` (VLAN 10) → 192.168.20.5:8069 | ✅ `303 SEE OTHER` (regla 25) |
+| `alpine` → ping 192.168.20.5, 192.168.20.5:22, 192.168.20.4:5432 | ✅ bloqueados |
+| `odoo` → `postgres` | ✅ conecta; PostgreSQL ve el cliente 192.168.20.5 |
 | **U3, reglas con registro y horario** (2026-11-13, 21:10 Chile): `TABLET-CONDUCTOR` → `http://192.168.20.5:8069` fuera del horario de despacho | ✅ sin respuesta; bloqueo registrado por la regla 9000 (R-99) de IPsec. Con el horario abierto a todo el día (prueba): `303`. Horario restaurado |
-| `TABLET-CONDUCTOR` → `alpine-1` (VLAN 10) | ✅ bloqueado desde que se deshabilitó la regla 200 (100 % de pérdida) |
-| `alpine-1` → `http://example.com` / `https://example.com` | ✅ 80 bloqueado (antes 200) / 443 `200 OK` |
+| `TABLET-CONDUCTOR` → `alpine` (VLAN 10) | ✅ bloqueado desde que se deshabilitó la regla 200 (100 % de pérdida) |
+| `alpine` → `http://example.com` / `https://example.com` | ✅ 80 bloqueado (antes 200) / 443 `200 OK` |
 
 ![WEBTERM-VEHICULO: Odoo de la sede abierto desde el vehículo](img/vpn-vehiculo/05-webterm-odoo.png)
 
@@ -226,7 +226,7 @@ Odoo todavía no tiene base de datos: abre el asistente de creación (`/web/data
  3  192.168.10.230  7.259 ms
 ```
 
-No se probaron con tráfico real: las reglas de las VLAN 20, 30 y 99 (`postgres-1`, el SIEM y los Mint no estaban encendidos) y la recepción de los logs en Wazuh.
+No se probaron con tráfico real: las reglas de las VLAN 20, 30 y 99 (`postgres`, el SIEM y los Mint no estaban encendidos) y la recepción de los logs en Wazuh.
 
 ---
 

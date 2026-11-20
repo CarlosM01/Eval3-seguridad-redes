@@ -17,8 +17,8 @@ Este documento reúne el material de laboratorio del informe sumativo de la Unid
 
 | Segmento / VLAN | Zona | Red / máscara | Gateway | Dispositivos activos |
 |---|---|---|---|---|
-| VLAN 10 `ADMIN_LOGISTICA` | Interna: usuarios y bodega | 192.168.10.0/24 | 192.168.10.1 | `alpine-1` (DHCP, .230) |
-| VLAN 20 `INVENTARIO_BODEGAS` | Interna crítica: inventario y WMS | 192.168.20.0/24 | 192.168.20.1 | `postgres-1` (.4), `odoo-1` WMS (.5) |
+| VLAN 10 `ADMIN_LOGISTICA` | Interna: usuarios y bodega | 192.168.10.0/24 | 192.168.10.1 | `alpine` (DHCP, .230) |
+| VLAN 20 `INVENTARIO_BODEGAS` | Interna crítica: inventario y WMS | 192.168.20.0/24 | 192.168.20.1 | `postgres` (.4), `odoo` WMS (.5) |
 | VLAN 30 `SERVIDORES_SIEM` | Monitoreo | 192.168.30.0/24 | 192.168.30.1 | `WAZUH-MANAGER` (.5), `WAZUH-INDEXER` (.6), `WAZUH-DASHBOARD` (.7) |
 | VLAN 99 `MGMT_TI` | Administración TI | 10.99.0.0/25 | 10.99.0.1 | Switch (.2), `PKI-CA` (.10), `WEBTERM-ADMIN` (.20), `SoporteTI` |
 | WAN sede | Externa | 203.0.113.0/30 | 203.0.113.1 (`ISP-WAN`) | `FW-ZONA-CENTRO` (.2, IP pública fija) |
@@ -36,8 +36,8 @@ Exposición: A/M/B (alta, media, baja). Riesgo: dimensión C/I/D afectada.
 
 | ID | Origen | Destino | Servicio / puerto | Activo crítico (U2) | Exposición | Riesgo | Punto de control | Importancia del control |
 |---|---|---|---|---|---|---|---|---|
-| F-01 | VLAN 10 (bodega) | WMS `odoo-1` (VLAN 20) | TCP 8069 (443 tras T2.2) | ACT-01, ACT-02 (C1) | M | I, C | Firewall entre VLAN | Solo el puerto del WMS llega a la VLAN crítica; la base de datos queda fuera (riesgo U2 R2, R7) |
-| F-02 | Vehículo y tablet del conductor | WMS `odoo-1` | IPsec + TCP 8069 | ACT-03, ACT-01 (C2) | A | C, I | Concentrador VPN + firewall `enc0` + horario | Red pública: el túnel cifra y la regla deja solo el WMS y solo en el turno (R1, R3) |
+| F-01 | VLAN 10 (bodega) | WMS `odoo` (VLAN 20) | TCP 8069 (443 tras T2.2) | ACT-01, ACT-02 (C1) | M | I, C | Firewall entre VLAN | Solo el puerto del WMS llega a la VLAN crítica; la base de datos queda fuera (riesgo U2 R2, R7) |
+| F-02 | Vehículo y tablet del conductor | WMS `odoo` | IPsec + TCP 8069 | ACT-03, ACT-01 (C2) | A | C, I | Concentrador VPN + firewall `enc0` + horario | Red pública: el túnel cifra y la regla deja solo el WMS y solo en el turno (R1, R3) |
 | F-03 | Supervisores y gerencia remotos | WMS | IPsec + HTTPS | ACT-01 (C4) | A | C | Concentrador VPN | Acceso remoto por perfil (R1, R3). Sin implementar: tarea opcional L7 |
 | F-04 | VLAN 99 (administración TI) | Equipos de red y servidores | SSH 22, HTTPS 443, SNMP 161 | ACT-07 | M | C, I, D | Firewall + gestión solo en VLAN 99 | Quien administra controla la red; solo la VLAN 99 entra (condición 2 del caso) |
 | F-05 | Socios B2B (externo) | Pasarela AS2 | HTTPS 443 | ACT-04 (C3a) | A | I | Firewall (publicación) | Sin regla: la pasarela no está montada (T5.3). Hoy la WAN no publica ningún servicio, así que el flujo está bloqueado por R-99 |
@@ -53,15 +53,15 @@ Todas las reglas tienen el registro activado (*Log*). El firewall tiene estado, 
 
 | ID | Flujo | Interfaz | Origen | Destino | Servicio | Acción | Tipo | Justificación | Prueba de validación (2026-11-13) |
 |---|---|---|---|---|---|---|---|---|---|
-| R-01 | F-01 | VLAN 10 | VLAN 10 | `WMS_ODOO` (192.168.20.5) | `PUERTOS_WMS` (TCP 8069) | Permitir + log | A (alias) | Usuarios de bodega solo al WMS | `alpine-1` → `http://192.168.20.5:8069/web/login`: **303** ✅ |
+| R-01 | F-01 | VLAN 10 | VLAN 10 | `WMS_ODOO` (192.168.20.5) | `PUERTOS_WMS` (TCP 8069) | Permitir + log | A (alias) | Usuarios de bodega solo al WMS | `alpine` → `http://192.168.20.5:8069/web/login`: **303** ✅ |
 | R-02 | F-02 | IPsec | `RED_VEHICULO` (172.16.50.0/24) | `WMS_ODOO` | `PUERTOS_WMS` | Permitir + log, horario `HORARIO_DESPACHO` | A (horario, alias) | El conductor usa el WMS solo en el turno de despacho | Fuera de horario (21:10): tablet → Odoo **sin respuesta**, bloqueo con la etiqueta de R-99 ✅. Con el horario abierto a todo el día (prueba): **303** ✅. Horario restaurado |
 | R-03 | F-04 | VLAN 99 | VLAN 99 | VLAN 10/20/30 (`REDES_VLAN_10_20_30`) y `SIEM_WAZUH` | SSH, SNMP, HTTPS, ICMP; puertos de Wazuh | Permitir + log | A (alias) | Solo la VLAN 99 administra | `PKI-CA` → `https://10.99.0.1`: **200**; → Wazuh 5601: **302**; → switch 22: **abierto** ✅ |
 | R-04 | F-06 | VLAN 10, VLAN 20 | Su VLAN | `SIEM_WAZUH` | 514, 1514, 1515 | Permitir + log | B | Envío de eventos al SIEM | Sin cambios respecto de la U2 (pendiente prueba con agente) |
-| R-05 | F-07 | VLAN 10 | VLAN 10 | No RFC 1918 | `PUERTOS_SALIDA_V10` (53, 123, 443) e ICMP | Permitir + log | A (alias, negación) | Salida a Internet sin HTTP 80 | `alpine-1` → `https://example.com`: **200** ✅; → `http://example.com`: **bloqueado** ✅ (antes del cambio: 200) |
+| R-05 | F-07 | VLAN 10 | VLAN 10 | No RFC 1918 | `PUERTOS_SALIDA_V10` (53, 123, 443) e ICMP | Permitir + log | A (alias, negación) | Salida a Internet sin HTTP 80 | `alpine` → `https://example.com`: **200** ✅; → `http://example.com`: **bloqueado** ✅ (antes del cambio: 200) |
 | R-06 | F-02 | WAN | Cualquiera | IP WAN | UDP 500, UDP 4500, ESP | Permitir + log | B | El vehículo llega desde una IP variable (CGNAT) | Túnel `ESTABLISHED`, 2 Child SA `INSTALLED` tras el cambio ✅ |
 | R-08 | F-08 | VLAN 10, 20, 30 | Su VLAN | `PKI_CA` | `PUERTOS_PKI` (80, 2560) | Permitir + log | A (alias) | CRL y OCSP | Sin cambios (probada en T1.2) |
 | R-09 | — | VLAN 30 | VLAN 30 | Su gateway | DNS, NTP | Permitir + log | B | Servicios básicos del SIEM | Sin cambios |
-| R-99 | Todos | Las 6 interfaces | Cualquiera | Cualquiera | Todo | **Bloquear + log** | A (denegación final) | Mínimo privilegio: lo no permitido queda registrado con su regla | `alpine-1` → `postgres-1:5432`: **bloqueado** ✅; tablet → VLAN 10: **100 % de pérdida** ✅ |
+| R-99 | Todos | Las 6 interfaces | Cualquiera | Cualquiera | Todo | **Bloquear + log** | A (denegación final) | Mínimo privilegio: lo no permitido queda registrado con su regla | `alpine` → `postgres:5432`: **bloqueado** ✅; tablet → VLAN 10: **100 % de pérdida** ✅ |
 
 R-07 queda reservada para la VPN de acceso remoto (F-03, tarea opcional L7).
 
@@ -85,7 +85,7 @@ Cada línea de `filterlog` trae fecha y hora (UTC), la etiqueta de la regla, la 
 ```
 # Bloqueo: la tablet intenta el WMS fuera de horario (etiqueta 1d7cd239… = R-99 en IPsec)
 139,,,1d7cd239-b850-4296-bef5-dfb953d13643,enc0,match,block,in,4,0x0,,63,16694,0,DF,6,tcp,60,172.16.50.10,192.168.20.5,56294,8069,0,S,...
-# Permitido: alpine-1 sale por HTTPS (etiqueta 231aa18b… = R-05)
+# Permitido: alpine sale por HTTPS (etiqueta 231aa18b… = R-05)
 94,,,231aa18b-1ca2-421f-9ecc-59da8a840dcc,vlan010,match,pass,in,4,0x0,,64,16901,0,DF,6,tcp,60,192.168.10.230,172.66.147.243,56896,443,0,S,...
 ```
 

@@ -47,7 +47,7 @@ Hay un solo laboratorio, en el servidor GNS3 del dueño. Todos trabajan sobre lo
 | Consolas | `telnet 10.163.179.125 <puerto>`; tabla de puertos en [HOJA_TRAMPA.md](HOJA_TRAMPA.md) |
 | Interfaz gráfica de administración | VNC `10.163.179.125:5902` (`WEBTERM-ADMIN`) |
 
-**Al arrancar:** los nodos no arrancan solos. Primero `CiscoSW-1`, `ISP-WAN`, `FW-ZONA-CENTRO` y `FW-VEHICULO-01`; unos 2 minutos después, el resto. `Kali` y `SoporteTI` quedan apagados salvo que la tarea los use.
+**Al arrancar:** los nodos no arrancan solos. Primero `SW-ZONA-CENTRO`, `ISP-WAN`, `FW-ZONA-CENTRO` y `FW-VEHICULO-01`; unos 2 minutos después, el resto. `Kali` y `SoporteTI` quedan apagados salvo que la tarea los use.
 
 **Cuidado, el servidor no tiene contraseña:** cualquiera en la red ZeroTier puede parar o borrar nodos y abrir consolas con root. Ver [INFORME_MEJORAS.md §4.2](INFORME_MEJORAS.md).
 

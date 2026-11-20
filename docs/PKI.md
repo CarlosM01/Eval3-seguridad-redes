@@ -86,7 +86,7 @@ Cada certificado se emite en la tarea que configura su equipo, para que la clave
 |---|---|---|---|---|
 | `fw-centro.empresa.local` + `IP:203.0.113.2`, `IP:10.99.0.1` | equipo | `FW-ZONA-CENTRO` (IPsec y servidor OpenVPN; web y syslog TLS pendientes) | T1.3, T2.1 | Emitido 2026-11-20 (serie `…DB374`) |
 | `vehiculo-01.empresa.local` | equipo | `FW-VEHICULO-01` (IPsec; web pendiente) | T1.3, T2.1 | Emitido 2026-11-20 (serie `…DB375`) |
-| `wms.empresa.local` + `IP:192.168.20.5` | servidor | `odoo-1` (nginx) | T2.2 | Pendiente |
+| `wms.empresa.local` + `IP:192.168.20.5` | servidor | `odoo` (nginx) | T2.2 | Pendiente |
 | `siem.empresa.local` + `IP:192.168.30.5` | servidor | `WAZUH-MANAGER` (rsyslog TLS) | T3.1 | Pendiente |
 | `rele-syslog.empresa.local` | equipo | `RELE-SYSLOG` | T3.3 | Pendiente |
 | `supervisor1@supervisores.empresa.local` | usuario | `REMOTO-SUPERVISOR` (cliente OpenVPN) | T5.2 | Emitido 2026-11-20 (serie `…DB373`) |

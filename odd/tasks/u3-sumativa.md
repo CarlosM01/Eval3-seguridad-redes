@@ -16,6 +16,7 @@ Branch: `feat/u3-sumativa`, stacked on `feat/gns3-control-scripts` (dd8853e comm
 - S9. Backups: `config-FW-ZONA-CENTRO.empresa.local-20261120.xml`, `config-FW-VEHICULO-01.empresa.local-20261120.xml`, `CiscoSW-1_running-config_20261120.txt` (kept out of Git: they hold private keys).
 - S10. Health check: interfaces up, services running (pf, suricata, strongswan, openvpn, syslog-ng, unbound), CPU/RAM, `wazuh-control status`, indexer `_cluster/health`.
 - S11. Tests P-01..P-08 of report §4.4 run and recorded; screenshots for Figures 1–10 in `docs/img/u3-sumativa/`.
+- S13. User request (2026-11-20): "Necesito que hagas correcciones de estilo en la topografía, que ajustes los colores, pongas notas útiles, alinees las cuadrículas, etc...  Para que todo se vea más ordenado y bonito.  También voy a necesitar que conectes la máquina kali, para que no parezca que nos olvidamos de conectarla y por último voy a necesitar que actualices el .docx con las capturas de pantalla". Mid-turn additions: "Me gustaría que cambiaras los íconos, por unos más descriptivos y estéticos" and "también algunos nombres, como odoo-1, podría quedar simplemente como odoo, lo mismo con postgres, etc...   Eso también habría que actualizarlo en la documentación".
 - S12. Project rules: update `docs/INFORME_MEJORAS.md` (§1–§5), `README.md`, `docs/INFRAESTRUCTURA_ACTUAL.md`; never edit the baseline.
 
 Assumptions: Kali joins the external zone on ISP-WAN Gi0/3 with 192.0.2.10/24 (RFC 5737 TEST-NET-1, gateway 192.0.2.1); the B2B node is a new Docker image `b2b-dmz-gns3` (nginx HTTPS) on CiscoSW-1 Gi1/2; FW-ZONA-CENTRO RAM raised to 4096 MB for Suricata.
@@ -33,6 +34,9 @@ Assumptions: Kali joins the external zone on ISP-WAN Gi0/3 with 192.0.2.10/24 (R
 | T7 | S8, S11 | inline | done | P-01..P-08 OK; E-01..E-04 in Wazuh (100210, 100212+87702, 100201, 100211) |
 | T8 | S9, S10 | inline | done | `configs/backup-u3-sumativa/` (XML git-ignored); services/health captured |
 | T9 | S11 | inline | done | 34 PNG in `docs/img/u3-sumativa/` |
+| T11 | S13 | inline | done | Canvas restyled via API (zones, notes, PC badges, 25 px grid, affinity icons); SW-INTERNET + Kali linked; ISP-WAN DHCP pool INTERNET_EXTERNA, Kali lease 192.0.2.20 |
+| T12 | S13 | inline | done | Renames CiscoSW-1→SW-ZONA-CENTRO, NAT1→INTERNET, odoo-1→odoo, postgres-1→postgres, alpine-1→alpine; P-01, P-05, P-06 rechecked; current docs updated |
+| T13 | S13 | inline | done | Word: 10 placeholders replaced by 34 screenshots with captions; OOXML validation passed; visual check in Word pending (no LibreOffice here) |
 | T10 | S12 | inline | done | U3_SUMATIVA.md, INFRAESTRUCTURA_ACTUAL.md, INFORME_MEJORAS §1–§5, README, PKI.md; commits 7adfdce (lab) and the docs commit that follows it on `feat/u3-sumativa` |
 
 ## Log
@@ -43,3 +47,4 @@ Assumptions: Kali joins the external zone on ISP-WAN Gi0/3 with 192.0.2.10/24 (R
 - L4 (2026-11-20): findings. OPNsense 26.7: the `openvpn` interface group only validates after `configctl interface invoke registration`; OpenVPN instances need `vpnid`; the issuing CA needs `caref` to the root or OpenVPN fails with "unable to get issuer certificate"; IDS rule download needs `configctl template reload OPNsense/IDS` first; homenet is comma separated. Kali has only SPICE, so the remote client is a container. Firefox on WEBTERM-ADMIN driven with xdotool on display :101 (keys need `--window`); console screenshots from a VTE window on a private Xtigervnc :102 (GDK_BACKEND=x11, WAYLAND_DISPLAY unset).
 - L5 (2026-11-20): done. Remaining for the user: fix 7 report texts (U3_SUMATIVA.md §7), label Figure 1, attach the XML, copy the live `eval1.gns3` into the repo, commit.
 - L6 (2026-11-20): "Yes, copy and commit". Live `eval1.gns3` copied; previous task committed as dd8853e on `feat/gns3-control-scripts`; this work as 7adfdce plus the docs commit on `feat/u3-sumativa`. Not pushed.
+- L7 (2026-11-20): S13 requests (verbatim in S13). Done through the GNS3 API; a second GUI on Xvfb (`gns3 --profile`) exported the scene for Figure 1. Findings: locked drawings return 409 until unlocked; renaming a Docker node recreates its container (data survives only in GNS3 volumes); label `x: null` lets the GUI centre labels. Live `eval1.gns3` copied again; Kali left stopped after the DHCP check. Not committed.

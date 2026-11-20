@@ -34,7 +34,7 @@ Red segmentada de una empresa logística (VLAN 10, 20, 30 y 99) con firewall OPN
 | Wazuh en Docker | Terminado (2026-11-11) | [odd/tasks/wazuh-docker.md](odd/tasks/wazuh-docker.md) |
 | Endurecimiento según el informe | Fase 1 en curso: T1.1 y T1.2 terminadas (2026-11-13), PKI con CRL y OCSP; siguiente: T1.3. Resumen en [docs/INFORME_MEJORAS.md](docs/INFORME_MEJORAS.md) | [odd/tasks/informe-hardening.md](odd/tasks/informe-hardening.md) |
 | Unidad 3, seguridad perimetral (formativa) | L0–L2 terminadas (2026-11-13). Informe formativo con evidencias y capturas ([docs/INFORME_U3_FORMATIVO.md](docs/INFORME_U3_FORMATIVO.md)) | [odd/tasks/u3-perimetral.md](odd/tasks/u3-perimetral.md) |
-| Unidad 3, evaluación sumativa | Laboratorio actualizado (2026-11-20): DMZ B2B con NAT 443, IPsec con certificados y un Child SA, OpenVPN por perfiles, Suricata IPS, eventos E-01–E-04 en Wazuh, respaldos y 34 capturas. Pendiente: corregir 7 textos del Word, etiquetar la Figura 1 y copiar el `eval1.gns3` vivo al repositorio ([docs/U3_SUMATIVA.md](docs/U3_SUMATIVA.md)) | [odd/tasks/u3-sumativa.md](odd/tasks/u3-sumativa.md) |
+| Unidad 3, evaluación sumativa | Laboratorio actualizado (2026-11-20): DMZ B2B con NAT 443, IPsec con certificados y un Child SA, OpenVPN por perfiles, Suricata IPS, eventos E-01–E-04 en Wazuh, respaldos y 34 capturas. Lienzo ordenado con zonas y puntos de control, `Kali` conectado, nombres simplificados y capturas pegadas en el Word. Pendiente: revisar el Word y corregir 7 textos ([docs/U3_SUMATIVA.md](docs/U3_SUMATIVA.md)) | [odd/tasks/u3-sumativa.md](odd/tasks/u3-sumativa.md) |
 
 ## Línea base
 
@@ -50,7 +50,7 @@ Red segmentada de una empresa logística (VLAN 10, 20, 30 y 99) con firewall OPN
 | `configs/` | Configuraciones capturadas de router, switch e ISP | — |
 | `configs/opnsense/` | Scripts PHP con los que se configuran los firewalls | — |
 | `configs/backup-pre-hardening/` | Respaldo previo al endurecimiento (2026-11-13): `eval1.gns3`, `config.xml` de los dos OPNsense (solo en local, tienen claves privadas), running-config del switch y de `ISP-WAN`. También `eval1.gns3.pre-hardening` en la raíz | — |
-| `configs/backup-u3-sumativa/` | Respaldos de la sumativa U3 (2026-11-20): XML de los dos OPNsense (solo en local, tienen claves privadas) y running-config de `CiscoSW-1` | — |
+| `configs/backup-u3-sumativa/` | Respaldos de la sumativa U3 (2026-11-20): XML de los dos OPNsense (solo en local, tienen claves privadas) y running-config de `SW-ZONA-CENTRO` | — |
 | `docker/` | Dockerfiles de las imágenes propias (`odoo-gns3`, `wazuh-gns3`, `pki-ca-gns3`, `b2b-dmz-gns3`, `remoto-gns3`) | — |
 | `.gitignore` | Qué no se sube a GitHub y por qué; detalle en [docs/COLABORAR.md](docs/COLABORAR.md) | — |
 | `odd/tasks/` | Especificación y bitácora de cada trabajo | Inglés |
