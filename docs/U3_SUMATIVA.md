@@ -89,7 +89,7 @@ Están en [../configs/backup-u3-sumativa/](../configs/backup-u3-sumativa/). Los 
 | Figura 9: estado operativo | `fig09a-dashboard.png`, `fig09b-wazuh-status.png`, `fig09c-servicios.png` | Dashboard con widgets en verde, `wazuh-control status` + `_cluster/health` green, lista de servicios en ejecución |
 | Figura 10: política por perfil | `fig10-p01-alpine-restricciones.png` y las de la Figura 5 | P-01: WMS sí, OPNsense y BD no; P-02: P-03/P-04; P-03: P-05; P-04: P-08; P-05: P-07 |
 
-Las capturas ya están pegadas en el Word (Figuras 1–10, con subtítulos y nota de fuente). Los nombres de archivo conservan los nombres de nodo antiguos (`alpine-1`, `CiscoSW-1`); ver la tabla de equivalencias en [INFRAESTRUCTURA_ACTUAL.md §5](INFRAESTRUCTURA_ACTUAL.md).
+Las capturas ya están pegadas en el Word (Figuras 1–10, con subtítulos y nota de fuente). El Word también enlaza este repositorio (https://github.com/CarlosM01/Eval3-seguridad-redes) en la tabla de la introducción y en las referencias. El Word es la copia de trabajo del equipo y lo que se entrega al profesor; no se versiona en Git. Los nombres de archivo conservan los nombres de nodo antiguos (`alpine-1`, `CiscoSW-1`); ver la tabla de equivalencias en [INFRAESTRUCTURA_ACTUAL.md §5](INFRAESTRUCTURA_ACTUAL.md).
 
 ## 7. Diferencias entre el informe Word y el laboratorio
 
