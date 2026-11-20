@@ -6,20 +6,24 @@ Este documento registra, a medida que avanza el trabajo, cada mejora de segurida
 - **El "antes":** [linea-base/INFRAESTRUCTURA.md](linea-base/INFRAESTRUCTURA.md), congelado a propósito como línea base.
 - **El plan completo y la bitácora técnica (en inglés):** [../odd/tasks/informe-hardening.md](../odd/tasks/informe-hardening.md).
 
-> Última actualización: 2026-11-13 (noche), tras las tareas L1 y L2 de la Unidad 3: reglas con registro, mínimo privilegio, denegación final y horario de despacho ([U3_SEGURIDAD_PERIMETRAL.md](U3_SEGURIDAD_PERIMETRAL.md)).
+> Última actualización: 2026-11-20, evaluación sumativa U3 aplicada en el laboratorio: DMZ B2B, VPN IPsec con certificados, OpenVPN por perfiles, Suricata IPS, eventos en Wazuh, respaldos y capturas ([U3_SUMATIVA.md](U3_SUMATIVA.md)). Acceso GNS3 por `10.163.179.125:3080` comprobado.
 
 ---
 
 ## 1. Estado general
 
+Acceso GNS3: `10.163.179.125:3080`, comprobado el 2026-11-20 (API y consolas).
+
 | Fase | Objetivo | Estado |
 |---|---|---|
 | 0 | Respaldos y verificación de lo que soporta el laboratorio | Terminada (2026-11-13) |
-| 1 | PKI propia: CA raíz fuera de línea y CA emisora con claves en HSM | En curso: T1.1 y T1.2 terminadas; falta T1.3 (certificados propios de los firewalls) |
-| 2 | Endurecer lo existente: VPN con certificados, TLS 1.3 en el WMS, reglas mínimas, gestión del switch | En curso: reglas mínimas aplicadas en parte (T2.3, junto con la Unidad 3); falta quitar el Child SA de la VLAN 10 y pasar el WMS a 443 |
-| 3 | Syslog sobre TLS hacia Wazuh y relé syslog en VLAN 99 | Pendiente |
-| 4 | Detección: IPS en el firewall e IDS de red en un puerto espejo | Pendiente |
-| 5 | Canales nuevos (acceso remoto C4, pasarela AS2 C3a) y prueba de aceptación | Pendiente |
+| 1 | PKI propia: CA raíz fuera de línea y CA emisora con claves en HSM | T1.1 y T1.2 rehechas el 2026-11-20 (la PKI del 13-11 se perdió, ver L15). T1.3 en parte: los firewalls tienen certificado de PKI-CA para IPsec y OpenVPN; la GUI web sigue con el autofirmado |
+| 2 | Endurecer lo existente: VPN con certificados, TLS 1.3 en el WMS, reglas mínimas, gestión del switch | En curso: VPN con certificados y un solo Child SA (T2.1), reglas mínimas R-01 a R-99 (T2.3) y gestión del switch solo desde VLAN 99, terminadas el 2026-11-20; falta pasar el WMS a 443 (T2.2) |
+| 3 | Syslog sobre TLS hacia Wazuh y relé syslog en VLAN 99 | Pendiente (sigue UDP 514 sin cifrar) |
+| 4 | Detección: IPS en el firewall e IDS de red en un puerto espejo | IPS en el firewall terminado (T4.1, 2026-11-20); IDS en puerto espejo pendiente |
+| 5 | Canales nuevos (acceso remoto C4, pasarela AS2 C3a) y prueba de aceptación | En parte (2026-11-20): OpenVPN para supervisores y pasarela B2B HTTPS en la DMZ. Faltan IKEv2 con EAP, AS2 y la prueba de aceptación |
+
+Scripts locales disponibles para iniciar/detener GNS3 y ZeroTier y controlar reglas UFW. Probados con comandos simulados; no aplicados al laboratorio. Véase [CONTROL_GNS3.md](CONTROL_GNS3.md).
 
 ## 2. Resumen antes → después
 
@@ -37,6 +41,16 @@ Una fila por cambio ya aplicado en el laboratorio.
 | Alcance del vehículo (C2) | El vehículo llegaba a toda la VLAN 10 y la VLAN 10 al vehículo (reglas 10 y 200) | Esas dos reglas quedan deshabilitadas: el vehículo solo llega al WMS | POL-05 (mínimo privilegio), canal C2 | U3 L1 (parte de T2.3) |
 | Salida a Internet de la VLAN 10 | DNS, NTP, HTTP 80 y HTTPS | DNS, NTP y HTTPS; HTTP 80 sin cifrar queda bloqueado | POL-01 (canales cifrados) | U3 L1 (parte de T2.3) |
 | Horario del vehículo | El vehículo llegaba al WMS a cualquier hora | Solo de lunes a sábado, de 07:00 a 20:00 (horario `HORARIO_DESPACHO`); fuera de horario se cortan sus conexiones | POL-05; regla avanzada de la guía U3 | U3 L2 |
+| Acceso al servidor GNS3 | `10.82.151.125` | `10.163.179.125`; referencias de API, Telnet y VNC actualizadas | Operación del laboratorio compartido; no añade requisitos de seguridad | Actualización documental (2026-11-18) |
+| Control local | Comandos manuales | `scripts/labctl.py` reúne arranque, apagado y reglas UFW propias; implementación sin ejecución real | Operación del laboratorio; no añade requisitos del informe | Scripts (2026-11-18) |
+| DMZ B2B (F-05) | Solo una propuesta; `opt4` "DMZ" a medio crear (en `vtnet0`, deshabilitada) | VLAN 40 192.168.40.0/24 en el switch y el firewall; nodo `B2B-DMZ` (nginx HTTPS, certificado RSA-3072 de PKI-CA); NAT 203.0.113.2:443 → 192.168.40.10 (R-05A); la DMZ solo llega al WMS 8069 (R-05B) | Informe U3: condición 1 del caso, F-05; informe U2 canal C3a | U3 sumativa (2026-11-20) |
+| VPN del vehículo (F-02) | Clave compartida (PSK) y dos Child SA (WMS y VLAN 10) | Certificados X.509 de PKI-CA en los dos extremos; un solo Child SA 192.168.20.5/32 ↔ 172.16.50.0/24; AES-256-GCM con ECP-521 | POL-04, POL-05; T2.1 | U3 sumativa (2026-11-20) |
+| Acceso remoto (F-03) | No existía | OpenVPN UDP 1194, pool 10.8.0.0/24, certificado de usuario de PKI-CA, solo ruta al WMS; R-03A permite 8069, R-03B bloquea VLAN 99 y la BD | Informe U3 F-03, perfil P-03; T5.2 (en parte) | U3 sumativa (2026-11-20) |
+| IPS | Suricata instalado, apagado | Suricata 8.0.6 en modo IPS (Netmap) en `vtnet1` (WAN) y `vtnet0` (troncal), ET Open scan/exploit/web_server en *drop*, alertas a Wazuh | Informe U3 (IPS), T4.1 | U3 sumativa (2026-11-20) |
+| Reglas del firewall | Reglas U3 L1–L2 perdidas (ver L15) | Tabla R-01 a R-99 del informe sumativo, con registro en todas, R-99 en 8 interfaces, alias del informe y NAT de salida explícito para la VLAN 10 | Informe U3 §4.2; POL-05, POL-06 | U3 sumativa (2026-11-20) |
+| Wazuh | Solo alertaba bloqueos repetidos (87702) | Decodificador del EVE de Suricata por syslog y reglas locales 100200–100212: un evento visible por cada E-01 a E-04 | Informe U3 §5.2; resuelve L13 | U3 sumativa (2026-11-20) |
+| Gestión del switch | SVI en VLAN 10/20/30: el switch respondía SSH desde la VLAN 10 | Solo Vlan99; ACL `MGMT_VTY` en las VTY (10.99.0.0/25) | POL-05, F-04 (administración solo desde VLAN 99) | U3 sumativa (2026-11-20) |
+| Respaldos | Copias internas del 13-11 | XML de los dos firewalls y running-config del switch del 2026-11-20, fuera de Git | Informe U3 §5.3 | U3 sumativa (2026-11-20) |
 
 ## 3. Detalle de cada mejora
 
@@ -154,6 +168,48 @@ docker exec GNS3.PKI-CA.54ea9572-79a3-48cc-9bb4-8c652368f315 sh -c 'cd /srv/ca/e
 
 ---
 
+### 3.4 Actualización de la IP del servidor (2026-11-18)
+
+**Qué:** se actualizó la IP de acceso en las guías de colaboración, consolas y OPNsense, a petición del propietario.
+
+**Verificación:** revisión de referencias documentales; no se probó la conexión ni se cambió la configuración del servidor.
+
+**Observaciones:** los puertos se mantienen. La dirección anterior se conserva en los registros históricos.
+
+### 3.5 Scripts de control local (2026-11-18)
+
+**Qué:** `scripts/labctl.py` permite gestionar ZeroTier, una unidad GNS3 de usuario y reglas UFW limitadas a la IP del servidor y su interfaz ZeroTier. No modifica reglas ajenas.
+
+**Verificación:** 15 pruebas simuladas aprobadas y revisión independiente de tres fallos corregidos; pendiente la validación operativa. Revisión nativa no disponible en esta sesión (`immutable_review_transport_unsupported`). Uso y alcance en [CONTROL_GNS3.md](CONTROL_GNS3.md).
+
+**Observaciones:** se excluyen los puertos 16261 y 16262, de Project Zomboid. No se ha cambiado el laboratorio durante esta implementación.
+
+### 3.6 Evaluación sumativa U3: DMZ, VPN con certificados, OpenVPN, IPS y eventos en Wazuh (2026-11-20)
+
+**Qué pide:** el informe sumativo (versión con la retroalimentación del profesor) describe una DMZ B2B con NAT 443, la VPN del vehículo con certificados y un solo Child SA, OpenVPN por perfiles con la VLAN 99 bloqueada, Suricata en modo IPS sobre las interfaces padre, eventos E-01 a E-04 en Wazuh, respaldos XML y diez figuras con capturas.
+
+**Qué se hizo:** detalle completo, scripts y capturas en [U3_SUMATIVA.md](U3_SUMATIVA.md); estado de la red en [INFRAESTRUCTURA_ACTUAL.md](INFRAESTRUCTURA_ACTUAL.md).
+
+| Elemento | Detalle |
+|---|---|
+| Topología | Nodos `B2B-DMZ` (Gi1/3, VLAN 40) y `REMOTO-SUPERVISOR` (`ISP-WAN` Gi0/3, 192.0.2.10); `FW-ZONA-CENTRO` con 4 GB |
+| PKI | Raíz y emisora regeneradas; certificados `fw-centro`, `vehiculo-01`, `as2` y `supervisor1` firmados desde CSR generadas en cada equipo |
+| Firewall | [u3-sumativa-centro.php](../configs/opnsense/u3-sumativa-centro.php), [u3-ipsec-pki.php](../configs/opnsense/u3-ipsec-pki.php), [u3-openvpn.php](../configs/opnsense/u3-openvpn.php), [u3-suricata.php](../configs/opnsense/u3-suricata.php) |
+| Wazuh | [u3_decoder.xml y u3_rules.xml](../docker/wazuh-gns3/manager/local/), también copiados al Dockerfile del manager |
+| Capturas | 34 imágenes en [img/u3-sumativa/](img/u3-sumativa/), mapeadas a las Figuras 1–10 del informe |
+
+**Cómo se comprobó:**
+
+- [x] P-01 a P-08 del informe: los ocho con el resultado esperado (tabla en [U3_SUMATIVA.md §2](U3_SUMATIVA.md)).
+- [x] Túnel IPsec `ESTABLISHED` con *public key authentication* en los dos extremos y un solo Child SA `INSTALLED`.
+- [x] Cliente OpenVPN: verifica la cadena `Empresa CA Raiz` → `Empresa CA Emisora` → `fw-centro.empresa.local`, recibe 10.8.0.2 y solo la ruta 192.168.20.5.
+- [x] Suricata bloqueó en línea el escaneo nmap desde 192.0.2.10 (`action: blocked`, 7 firmas ET SCAN distintas) y la red interna siguió funcionando con Netmap en el troncal.
+- [x] Wazuh mostró E-01 (100210), E-02 (100212 y 87702), E-03 (100201) y E-04 (100211) con hora, origen, destino y regla.
+- [x] Respaldo XML descargado desde la GUI (120 KB, 22:18 UTC) y comprobado como XML válido.
+- [x] Después de quitar las SVI del switch: desde la VLAN 10, SSH a 192.168.10.2 y a 10.99.0.2 sin respuesta; desde la VLAN 99, SSH correcto.
+
+**Observaciones:** el laboratorio vivo no tenía los cambios del 13-11 (L15), así que se rehicieron reglas y PKI desde cero. Hay siete diferencias entre el texto del Word y lo implementado (ECP-521, cliente en contenedor y no Kali, OpenVPN solo con certificado, respaldos sin cifrar, puertos extra de R-04, reglas extra de la WAN, horas reales de los eventos); están en [U3_SUMATIVA.md §7](U3_SUMATIVA.md) para corregir el informe.
+
 ## 4. Limitaciones del entorno virtualizado y desviaciones del informe
 
 El laboratorio corre completo en un solo equipo con GNS3, contenedores Docker y máquinas virtuales. Algunas exigencias del informe no se pueden reproducir tal cual. Cada fila dice qué pide el informe, qué hace el laboratorio y por qué.
@@ -168,21 +224,26 @@ El laboratorio corre completo en un solo equipo con GNS3, contenedores Docker y 
 | L2 | CA raíz fuera de línea | Contenedor sin interfaces de red en el mismo anfitrión | Está aislada de la red del laboratorio, pero comparte el equipo físico. Los archivos se trasladan por el anfitrión en vez de por un medio extraíble en una ceremonia de firma | Confirmada (T1.1) |
 | L3 | Switch multicapa (L3) | Switch L2 (IOSv-L2) y enrutamiento entre VLAN en el firewall | El enrutamiento entre VLAN lo hace el firewall. El resultado de seguridad es igual o mejor, porque todo el tráfico entre VLAN pasa por el firewall | Confirmada (supuesto A2) |
 | L4 | Teléfono o tableta del conductor con VPN propia | Router OPNsense del vehículo (`FW-VEHICULO-01`) con un túnel sitio a sitio | GNS3 no emula bien un teléfono con cliente IPsec. El certificado identifica al router del vehículo | Confirmada (supuesto A1) |
-| L5 | Internet, socios y usuarios remotos reales | Segmento simulado 192.0.2.0/24 (direcciones de documentación, RFC 5737) detrás de `ISP-WAN` | No se exponen servicios a Internet real | Prevista (T5.1) |
-| L6 | Recursos de un equipo productivo | El firewall central tiene 2 GB de RAM; Suricata necesita subirlo a 4 GB | El anfitrión comparte memoria entre unos 20 nodos. Los nodos de la fase 5 solo se encienden para probarlos | Prevista (T4.1) |
+| L5 | Internet, socios y usuarios remotos reales | Segmento simulado 192.0.2.0/24 (direcciones de documentación, RFC 5737) en `ISP-WAN` Gi0/3, con un solo contenedor (`REMOTO-SUPERVISOR`) que hace de supervisor, socio y atacante | No se exponen servicios a Internet real | Confirmada (U3 sumativa) |
+| L6 | Recursos de un equipo productivo | El firewall central pasó de 2 a 4 GB de RAM para Suricata | El anfitrión comparte memoria entre unos 20 nodos. Con 18 nodos encendidos el anfitrión usó 19 de 31 GB (2026-11-20) | Confirmada (U3 sumativa) |
 | L7 | Credenciales robustas | Contraseñas del laboratorio en texto plano (`test123`) en la documentación | Es un laboratorio de estudio; se documentan a propósito para poder evaluarlo. No se reutilizan en entornos reales | Confirmada |
 | L8 | Respondedor OCSP de producción, en el concentrador VPN y la pasarela AS2 | Un único respondedor central (`openssl ocsp`, de un proceso) detrás de lighttpd, en `PKI-CA` | `openssl ocsp` está pensado para pruebas. El proxy lo protege de conexiones colgadas, pero atiende las consultas de a una. Su puerto interno 2561 queda accesible desde la VLAN 99, el segmento de confianza. Para el volumen del laboratorio alcanza | Confirmada (T1.2) |
 | L9 | CRL publicada sin cortes | CRL válida 7 días, regenerada cada día por `PKI-CA` | Si el laboratorio queda apagado más de 7 días, la CRL vence y los equipos que la exigen rechazan certificados hasta que `PKI-CA` arranque y la regenere | Confirmada (T1.2) |
 | L12 | Horario de despacho en hora local | El horario se escribe en UTC (10:00–23:00), porque el firewall usa UTC | Las horas en UTC deben ajustarse a mano cuando Chile cambia entre UTC−3 y UTC−4. Los registros del firewall quedan en UTC | Confirmada (U3 L2) |
-| L13 | El SIEM recibe los eventos relevantes del perímetro | Wazuh recibe todo el `filterlog`, pero sus reglas incluidas solo alertan sobre bloqueos repetidos desde un mismo origen (regla 87702) | Un acceso permitido o un bloqueo aislado quedan en el log del firewall, pero no aparecen como alerta en el dashboard. Se resolverá con una regla local en Wazuh (U3 L5) | Confirmada (U3 L1) |
+| L13 | El SIEM recibe los eventos relevantes del perímetro | Wazuh recibe todo el `filterlog`, pero sus reglas incluidas solo alertan sobre bloqueos repetidos desde un mismo origen (regla 87702) | Un acceso permitido o un bloqueo aislado quedan en el log del firewall, pero no aparecen como alerta en el dashboard. **Resuelta en parte el 2026-11-20:** reglas locales 100210–100212 alertan los bloqueos de E-01, E-02 y E-04; los accesos permitidos siguen sin alerta | Confirmada (U3 L1); resuelta en parte (U3 sumativa) |
+| L15 | Cambios persistentes en el laboratorio compartido | El 2026-11-20 el laboratorio vivo no tenía las reglas U3 L1–L2 ni la PKI del 13-11: los volúmenes de `PKI-CA` y `CA-RAIZ` estaban vacíos desde el 17-11 22:09 y `opt4` "DMZ" estaba a medio crear | Probablemente el proyecto se reabrió o se reconstruyó el 17-11 desde otra copia. Se rehízo todo y la PKI tiene huellas nuevas. Los scripts de `configs/opnsense/` permiten repetir la configuración | Confirmada (U3 sumativa) |
+| L16 | Un solo archivo de topología | GNS3 tiene abierto `eval1` desde `~/GNS3/projects/e96f2260-…/eval1.gns3`; el `eval1.gns3` del repositorio es del 13-11 | El repositorio no refleja los nodos `B2B-DMZ` y `REMOTO-SUPERVISOR` hasta que se copie ese archivo o se abra el proyecto desde el repositorio | Confirmada (U3 sumativa) |
 
 ### 4.2 El servidor GNS3 compartido
+
+La IP vigente informada por el propietario el 2026-11-18 es `10.163.179.125`; su conectividad y la configuración de acceso no se han vuelto a comprobar. La confirmación de L10 corresponde a la revisión del 2026-11-13.
 
 Desde el 2026-11-13 el servidor GNS3 se comparte con los compañeros por una red ZeroTier, para que se conecten desde sus clientes. Esto no forma parte de la topología, pero cambia quién puede tocar el laboratorio.
 
 | # | Situación | Consecuencia | Estado |
 |---|---|---|---|
-| L10 | El servidor escucha en `10.82.151.125:3080` (ZeroTier) con `auth = False`, y las consolas de los nodos escuchan en esa IP con `allow_console_from_anywhere = True` | Cualquier equipo de esa red ZeroTier puede usar la API de GNS3 sin contraseña (parar, borrar o modificar nodos) y abrir las consolas. Las consolas de los contenedores dan una shell de root sin contraseña: en `PKI-CA` eso permite firmar certificados con la CA emisora. Las consolas de los firewalls y del switch sí piden contraseña (`test123`, documentada). La protección de la PKI y la segmentación del laboratorio valen solo frente a la red simulada, no frente a quien accede al servidor GNS3 | Confirmada (2026-11-13) |
+| L10 | El servidor escucha en `10.163.179.125:3080` (ZeroTier) con `auth = False`, y las consolas de los nodos escuchan en esa IP con `allow_console_from_anywhere = True` | Cualquier equipo de esa red ZeroTier puede usar la API de GNS3 sin contraseña (parar, borrar o modificar nodos) y abrir las consolas. Las consolas de los contenedores dan una shell de root sin contraseña: en `PKI-CA` eso permite firmar certificados con la CA emisora. Las consolas de los firewalls y del switch sí piden contraseña (`test123`, documentada). La protección de la PKI y la segmentación del laboratorio valen solo frente a la red simulada, no frente a quien accede al servidor GNS3 | Confirmada (2026-11-13) |
+| L14 | El controlador no gestiona IPv6, otras interfaces ni conexiones establecidas; reserva UDP 16261–16262 para Project Zomboid | El cierre solo bloquea nuevas conexiones IPv4 GNS3 por ZeroTier; si GNS3 asigna los puertos reservados a enlaces remotos, hay que reasignarlos | Confirmada en diseño; ejecución real pendiente |
 | L11 | `auto_start = False` | Al abrir el proyecto los nodos quedan apagados y hay que arrancarlos en orden (ver [HOJA_TRAMPA.md](HOJA_TRAMPA.md)). Tras el reinicio del 2026-11-13 se arrancaron y se comprobó que todo seguía igual: switch, regla 95, túnel IPsec, PKI, Odoo y Wazuh | Confirmada (2026-11-13) |
 
 ### 4.3 Desviaciones por limitaciones del software
@@ -192,8 +253,10 @@ Desde el 2026-11-13 el servidor GNS3 se comparte con los compañeros por una red
 | D1 | Mensajes AS2 con AES-256-GCM (`AuthEnvelopedData`) | AES-256-CBC con firma previa (RSA-3072/SHA-256) y MDN firmado | OpenAS2 solo implementa cifrados CBC. El informe admite CBC como excepción registrada (§3.3) | Prevista (T5.3) |
 | D2 | Cierre de sesión VPN tras 15 minutos de inactividad | Por confirmar: configuración directa de strongSwan o, si no, DPD y reautenticación cada 900 s | El modelo de OPNsense no tiene un campo de inactividad | Prevista (T5.2) |
 | D3 | Syslog sobre TLS recibido por el SIEM | rsyslog con TLS 1.3 delante de Wazuh, que lo entrega localmente | Wazuh 4.14 solo recibe syslog por UDP/TCP sin cifrar | Prevista (T3.1) |
-| D4 | IPS en línea sobre el tráfico VPN ya descifrado | Por confirmar: IPS en la interfaz IPsec o, si no, IPS en WAN e IDS en IPsec | La interfaz IPsec de OPNsense podría no admitir el modo en línea (netmap) | Prevista (T4.1) |
-| D5 | MFA para el acceso remoto | Certificado personal más una credencial EAP por usuario (dos rondas de autenticación IKEv2) | No hay servidor TOTP en el laboratorio; TOTP queda como mejora opcional | Prevista (T5.2, supuesto A4) |
+| D4 | IPS en línea sobre el tráfico VPN ya descifrado | IPS Netmap en `vtnet1` (WAN) y `vtnet0` (troncal de las VLAN). El tráfico del vehículo se inspecciona cifrado en la WAN y descifrado cuando sale por el troncal hacia la VLAN 20 | `enc0` no admite Netmap; el manual de OPNsense pide la interfaz padre para VLAN | Confirmada (U3 sumativa) |
+| D5 | MFA para el acceso remoto | Hoy: OpenVPN solo con certificado de usuario. Previsto: certificado más credencial por usuario | No hay servidor TOTP; usuario y clave en OpenVPN quedan pendientes | Confirmada en parte (U3 sumativa) |
+| D6 | Grupo DH ECP-256 (texto del informe U3) | ECP-521 en IKE y ESP (`aes256gcm16-sha256-ecp521`, `aes256gcm16-ecp521`) | El modelo IPsec de OPNsense 26.7 no ofrece ECP-256 con AES-GCM | Confirmada (U3 sumativa) |
+| D7 | Revocación inmediata del acceso remoto por CRL/OCSP | La opción OCSP del servidor OpenVPN está marcada, pero registra `no OCSP configured`: revocar un certificado de cliente aún no corta la VPN | Falta cargar la URL OCSP de la emisora en *System → Trust* | Confirmada (U3 sumativa) |
 
 ### 4.4 Fuera del alcance de la topología
 
@@ -203,4 +266,8 @@ Estos controles del informe pertenecen a la aplicación, a la nube o a los dispo
 
 ## 5. Próximo paso
 
-Según el plan de la Unidad 3 (entrega sumativa del 16-11): T2.1, VPN del vehículo con certificados ECDSA, ChaCha20-Poly1305, X25519 y MOBIKE (U3 L3), y T4.1, Suricata en `FW-ZONA-CENTRO` con alertas a Wazuh (U3 L4). T1.3 (certificados propios de los firewalls) queda para después de la entrega.
+Para la entrega sumativa: corregir en el Word las siete diferencias de [U3_SUMATIVA.md §7](U3_SUMATIVA.md), pegar las capturas en las Figuras 1–10 (la Figura 1 necesita las etiquetas de zonas y puntos de control) y adjuntar `config-FW-ZONA-CENTRO.empresa.local-20261120.xml`. Copiar al repositorio el `eval1.gns3` que tiene abierto GNS3 (L16).
+
+Validar los scripts de [CONTROL_GNS3.md](CONTROL_GNS3.md) en una sesión real (`labctl.py up`/`down`); el acceso a `10.163.179.125:3080` y a las consolas ya se comprobó el 2026-11-20.
+
+Después de la entrega: cargar la URL OCSP en la CA de OPNsense (D7), usuario y clave para OpenVPN (D5), WMS en 443 (T2.2) y syslog sobre TLS (fase 3).

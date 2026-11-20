@@ -84,17 +84,19 @@ Cada certificado se emite en la tarea que configura su equipo, para que la clave
 
 | Nombre (CN y SAN) | Perfil | Equipo | Tarea | Estado |
 |---|---|---|---|---|
-| `fw-centro.empresa.local` | equipo | `FW-ZONA-CENTRO` (web, IPsec, syslog TLS) | T1.3, T2.1 | Pendiente |
-| `vehiculo-01.empresa.local` | equipo | `FW-VEHICULO-01` (web, IPsec) | T1.3, T2.1 | Pendiente |
+| `fw-centro.empresa.local` + `IP:203.0.113.2`, `IP:10.99.0.1` | equipo | `FW-ZONA-CENTRO` (IPsec y servidor OpenVPN; web y syslog TLS pendientes) | T1.3, T2.1 | Emitido 2026-11-20 (serie `…DB374`) |
+| `vehiculo-01.empresa.local` | equipo | `FW-VEHICULO-01` (IPsec; web pendiente) | T1.3, T2.1 | Emitido 2026-11-20 (serie `…DB375`) |
 | `wms.empresa.local` + `IP:192.168.20.5` | servidor | `odoo-1` (nginx) | T2.2 | Pendiente |
 | `siem.empresa.local` + `IP:192.168.30.5` | servidor | `WAZUH-MANAGER` (rsyslog TLS) | T3.1 | Pendiente |
 | `rele-syslog.empresa.local` | equipo | `RELE-SYSLOG` | T3.3 | Pendiente |
-| `supervisor1@supervisores.empresa.local` | usuario | `REMOTO-SUPERVISOR` | T5.2 | Pendiente |
+| `supervisor1@supervisores.empresa.local` | usuario | `REMOTO-SUPERVISOR` (cliente OpenVPN) | T5.2 | Emitido 2026-11-20 (serie `…DB373`) |
 | `admin1@admins.empresa.local` | usuario | `REMOTO-ADMIN` | T5.2 | Pendiente |
-| `as2.empresa.local` + `IP:203.0.113.2` | socio | `PASARELA-AS2` | T5.3 | Pendiente |
+| `as2.empresa.local` + `IP:203.0.113.2`, `IP:192.168.40.10` | socio | `B2B-DMZ` (nginx HTTPS; AS2 pendiente) | T5.3 | Emitido 2026-11-20 (serie `…DB372`) |
 | `as2.socio.example` | socio | `SOCIO-B2B` | T5.3 | Pendiente |
 
 Historial: `prueba-ocsp.empresa.local` (serie `70F754D5…3A460534`) se emitió y revocó el 2026-11-13 para probar OCSP y la CRL.
+
+**Reconstrucción del 2026-11-20.** Los volúmenes de `CA-RAIZ` y `PKI-CA` aparecieron vacíos (desde el 17-11). La PKI se regeneró con los mismos scripts (`pki-raiz-init`, `pki-emisora-csr`, `pki-raiz-firmar`, `pki-emisora-instalar`, `pki-ocsp-init`). Huellas nuevas (SHA-256): raíz `FB:B9:3F:39:C0:DE:2C:37:43:51:04:08:B1:F7:86:B0:40:E4:A7:B3:27:F4:CA:D1:CB:94:17:F6:3F:7B:65:E1` (vence 2036-11-17); emisora `DD:03:1A:8B:B9:A0:CC:5D:6D:8B:FA:5C:A6:15:9A:36:4A:73:2C:40:6A:B0:4F:8C:79:3E:8F:33:6F:0F:99:03` (vence 2031-11-19). Los certificados emitidos antes de esa fecha ya no son válidos. Detalle en [U3_SUMATIVA.md §8](U3_SUMATIVA.md).
 
 ## 5. Procedimientos
 
